@@ -1,8 +1,9 @@
 from fastapi import FastAPI
+
 from app.api.customer_api import router as customer_router
 from app.api.order_api import router as order_router
 from app.api.dashboard_api import router as dashboard_router
-from app.auth.login_api import router as login_router
+from app.auth.auth_router import router as auth_router
 from app.database.init_db import init_database
 
 app = FastAPI(
@@ -15,7 +16,7 @@ init_database()
 app.include_router(customer_router)
 app.include_router(order_router)
 app.include_router(dashboard_router)
-app.include_router(login_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def home():
