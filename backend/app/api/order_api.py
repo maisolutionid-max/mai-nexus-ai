@@ -9,7 +9,7 @@ orders = []
 def get_orders():
     return orders
 
-@router.post("/orders")
+
 @router.post("/orders")
 def create_order(order: Order):
 
