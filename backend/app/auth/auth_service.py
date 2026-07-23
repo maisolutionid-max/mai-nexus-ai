@@ -1,5 +1,6 @@
 from .Password import verify_password
 from .jwt_handler import create_access_token
+from .user_service import create_user
 
 def login(username: str, password: str):
 
@@ -20,9 +21,4 @@ def login(username: str, password: str):
 
 
 def register(user):
-
-    return {
-        "message": "User berhasil dibuat",
-        "username": user.username,
-        "email": user.email
-    }
+    return create_user(user)
