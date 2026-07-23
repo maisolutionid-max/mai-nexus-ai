@@ -17,3 +17,12 @@ def login(username: str, password: str):
         "access_token": token,
         "token_type": "bearer"
     }
+
+
+def register(user):
+
+    return {
+        "message": "User berhasil dibuat",
+        "username": user.username,
+        "email": user.email
+    }
