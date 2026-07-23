@@ -1,8 +1,9 @@
 from pydantic import BaseModel
 
-class LaundryOrder(BaseModel):
-    customer_name: str
-    service_name: str
+class Order(BaseModel):
+    id: int
+    customer_id: int
+    service: str
     weight: float
-    total_price: float
+    total: float
     status: str
