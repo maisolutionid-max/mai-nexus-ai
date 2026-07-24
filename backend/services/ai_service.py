@@ -76,3 +76,19 @@ def predict_revenue(self):
         conn.close()
 
         return [dict(row) for row in data]
+        
+def business_advice(self):
+
+    summary = self.business_summary()
+    prediction = self.predict_revenue()
+
+    return {
+        "status": "AI Analysis",
+        "customers": summary["total_customers"],
+        "orders": summary["total_orders"],
+        "revenue": summary["total_revenue"],
+        "prediction": prediction["predicted_30_days"],
+        "recommendation":
+            "Tingkatkan promosi jika order menurun dan prioritaskan pelanggan loyal."
+    }
+
