@@ -1,3 +1,6 @@
+from services.ai_service import AIService
+
+ai = AIService()
 from fastapi import APIRouter
 from app.database.database import get_connection
 
@@ -19,9 +22,15 @@ def dashboard():
     omzet = cursor.fetchone()[0]
 
     conn.close()
-
+summary = ai.business_summary()
+prediction = ai.predict_revenue()
+top_customers = ai.top_customers()
+popular_services = ai.popular_services()
+advice = ai.business_advice()
     return {
-        "total_customers": total_customers,
-        "total_orders": total_orders,
-        "omzet": omzet
+    "dashboard": summary,
+    "prediction": prediction,
+    "top_customers": top_customers,
+    "popular_services": popular_services,
+    "business_advice": advice
     }
