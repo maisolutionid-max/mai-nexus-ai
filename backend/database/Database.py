@@ -28,3 +28,29 @@ def init_database():
         address TEXT
     )
     """)
+        cursor.execute("""
+    CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER,
+        service TEXT,
+        weight REAL,
+        total REAL,
+        status TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(customer_id) REFERENCES customers(id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER,
+        amount REAL,
+        method TEXT,
+        status TEXT,
+        paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(order_id) REFERENCES orders(id)
+    )
+        conn.commit()
+    conn.close()
+    """)
