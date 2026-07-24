@@ -51,6 +51,6 @@ def init_database():
         paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(order_id) REFERENCES orders(id)
     )
-        conn.commit()
-    conn.close()
     """)
+    conn.commit()
+    conn.close()
