@@ -1,10 +1,16 @@
 from fastapi import APIRouter
 from app.models.customer import Customer
-
-router = APIRouter()
 from app.database.database import get_connection
 
-@router.get("/customers")
+router = APIRouter(
+    prefix="/customers",
+    tags=["Customers"]
+)
+
+# ==========================
+# GET ALL CUSTOMERS
+# ==========================
+@router.get("/")
 def get_customers():
     conn = get_connection()
     cursor = conn.cursor()
@@ -17,15 +23,24 @@ def get_customers():
 
     return [dict(row) for row in customers]
 
-@router.post("/customers")
+
+# ==========================
+# CREATE CUSTOMER
+# ==========================
+@router.post("/")
 def create_customer(customer: Customer):
 
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO customers(name,phone,address) VALUES (?,?,?)",
+        """
+        INSERT INTO customers
+        (customer_code, name, phone, address)
+        VALUES (?, ?, ?, ?)
+        """,
         (
+            customer.customer_code,
             customer.name,
             customer.phone,
             customer.address
@@ -33,10 +48,8 @@ def create_customer(customer: Customer):
     )
 
     conn.commit()
-
     conn.close()
 
     return {
         "message": "Customer berhasil ditambahkan"
     }
-    
