@@ -76,7 +76,21 @@ def predict_revenue(self):
         conn.close()
 
         return [dict(row) for row in data]
-        
+    def late_orders(self):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM orders
+        WHERE status != 'Selesai'
+    """)
+
+    data = cursor.fetchall()
+
+    conn.close()
+
+    return [dict(row) for row in data]  
 def business_advice(self):
 
     summary = self.business_summary()
