@@ -16,7 +16,6 @@ def get_customers():
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM customers")
-
     customers = cursor.fetchall()
 
     conn.close()
@@ -52,4 +51,61 @@ def create_customer(customer: Customer):
 
     return {
         "message": "Customer berhasil ditambahkan"
+    }
+
+
+# ==========================
+# UPDATE CUSTOMER
+# ==========================
+@router.put("/{customer_id}")
+def update_customer(customer_id: int, customer: Customer):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE customers
+        SET customer_code=?,
+            name=?,
+            phone=?,
+            address=?
+        WHERE id=?
+        """,
+        (
+            customer.customer_code,
+            customer.name,
+            customer.phone,
+            customer.address,
+            customer_id
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "message": "Customer berhasil diupdate"
+    }
+
+
+# ==========================
+# DELETE CUSTOMER
+# ==========================
+@router.delete("/{customer_id}")
+def delete_customer(customer_id: int):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM customers WHERE id=?",
+        (customer_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "message": "Customer berhasil dihapus"
     }
