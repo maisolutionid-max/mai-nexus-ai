@@ -1,6 +1,4 @@
 from fastapi import FastAPI
-
-from fastapi import FastAPI
 from app.api.customer_api import router as customer_router
 from app.api.order_api import router as order_router
 from app.api.dashboard_api import router as dashboard_router
