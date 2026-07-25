@@ -21,9 +21,4 @@ def login(username: str, password: str):
 
 
 def register(user):
-
-    return {
-        "message": "User berhasil dibuat",
-        "username": user.username,
-        "email": user.email
-    }
+    return create_user(user)
