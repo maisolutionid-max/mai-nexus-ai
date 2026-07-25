@@ -5,10 +5,13 @@ from app.api.order_api import router as order_router
 from app.api.dashboard_api import router as dashboard_router
 
 from app.database.init_db import init_database
+init_database()
+
 app = FastAPI(
     title="MAI Nexus AI",
     version="1.0.0"
 )
+
 
 app.include_router(customer_router)
 app.include_router(order_router)
