@@ -8,13 +8,7 @@ def login(username: str, password: str):
         "username": "admin",
         "password": "$2b$12$dummyhash"
     }
-def register(user):
 
-    return {
-        "message": "User berhasil dibuat",
-        "username": user.username,
-        "email": user.email
-    }
     token = create_access_token(
         {"sub": username}
     )
@@ -22,4 +16,13 @@ def register(user):
     return {
         "access_token": token,
         "token_type": "bearer"
+    }
+
+
+def register(user):
+
+    return {
+        "message": "User berhasil dibuat",
+        "username": user.username,
+        "email": user.email
     }
