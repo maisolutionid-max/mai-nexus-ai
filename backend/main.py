@@ -22,12 +22,7 @@ app.include_router(customer_router)
 app.include_router(order_router)
 app.include_router(dashboard_router)
 app.include_router(auth_router)
-app.include_router(user_router)
-app.include_router(branch_router)
-app.include_router(service_router)
-app.include_router(inventory_router)
-app.include_router(payment_router)
-app.include_router(ai_router)
+
 
 @app.get("/")
 def home():
