@@ -1,33 +1,35 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
-from sqlalchemy.sql import func
-
-from database import Base
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 
-class User(Base):
-    __tablename__ = "users"
+class UserRegister(BaseModel):
+    full_name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    password: str
 
-    id = Column(Integer, primary_key=True, index=True)
 
-    full_name = Column(String(100), nullable=False)
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
-    email = Column(String(100), unique=True, index=True, nullable=False)
 
-    phone = Column(String(20), unique=True, nullable=True)
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
-    password = Column(String(255), nullable=False)
 
-    role = Column(String(30), default="customer", nullable=False)
+class TokenData(BaseModel):
+    user_id: Optional[int] = None
 
-    is_active = Column(Boolean, default=True)
 
-    created_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now()
-    )
+class UserResponse(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+    phone: Optional[str]
+    role: str
+    is_active: bool
 
-    updated_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now()
-    )
+    class Config:
+        from_attributes = True
