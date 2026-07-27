@@ -1,27 +1,23 @@
-from fastapi import APIRouter
-from app.database.database import get_connection
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-router = APIRouter()
+from database import get_db
 
-@router.get("/dashboard")
-def dashboard():
+from services.report_service import (
+    get_business_summary
+)
 
-    conn = get_connection()
-    cursor = conn.cursor()
+router = APIRouter(
+    prefix="/dashboard",
+    tags=["Dashboard"]
+)
 
-    cursor.execute("SELECT COUNT(*) FROM customers")
-    total_customers = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM orders")
-    total_orders = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COALESCE(SUM(total),0) FROM orders")
-    omzet = cursor.fetchone()[0]
-
-    conn.close()
+@router.get("/")
+def dashboard(
+    db: Session = Depends(get_db)
+):
 
     return {
-        "total_customers": total_customers,
-        "total_orders": total_orders,
-        "omzet": omzet
+        "dashboard": get_business_summary(db)
     }
