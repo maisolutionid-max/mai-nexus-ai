@@ -1,4 +1,3 @@
-
 from .auth_api import router as auth_router
 from .dashboard_api import router as dashboard_router
 from .customer_api import router as customer_router
