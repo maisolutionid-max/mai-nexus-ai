@@ -84,7 +84,62 @@ export default function Dashboard() {
         </p>
 
       </div>
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr",
+    gap: "20px",
+    marginTop: "25px",
+  }}
+>
+  <div
+    style={{
+      background: "#ffffff",
+      borderRadius: "12px",
+      padding: "20px",
+      boxShadow: "0 2px 8px rgba(0,0,0,.08)",
+    }}
+  >
+    <h2>📈 Revenue Trend</h2>
 
+    <div
+      style={{
+        height: "250px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        color: "#888",
+        border: "2px dashed #ddd",
+        borderRadius: "10px",
+      }}
+    >
+      Revenue Chart (Coming Soon)
+    </div>
+  </div>
+
+  <div
+    style={{
+      background: "#ffffff",
+      borderRadius: "12px",
+      padding: "20px",
+      boxShadow: "0 2px 8px rgba(0,0,0,.08)",
+    }}
+  >
+    <h2>🏆 Top Product</h2>
+
+    <p>🥇 Laundry Express</p>
+    <p>🥈 Dry Cleaning</p>
+    <p>🥉 Cuci Sepatu</p>
+
+    <hr />
+
+    <h2>👥 Top Customer</h2>
+
+    <p>PT ABC</p>
+    <p>PT XYZ</p>
+    <p>CV Maju Jaya</p>
+  </div>
+</div>
     </MainLayout>
   );
 
