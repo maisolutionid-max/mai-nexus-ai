@@ -20,7 +20,45 @@ export default function AIInsight() {
           boxShadow: "0 2px 10px rgba(0,0,0,.08)"
         }}
       >
+<div
+  style={{
+    background: "#ffffff",
+    padding: "20px",
+    borderRadius: "12px",
+    marginBottom: "20px",
+    boxShadow: "0 2px 8px rgba(0,0,0,.08)",
+  }}
+>
 
+  <h3>🤖 Ask Mai AI</h3>
+
+  <input
+    type="text"
+    placeholder="Contoh: Bagaimana performa bisnis saya minggu ini?"
+    style={{
+      width: "100%",
+      padding: "12px",
+      marginTop: "15px",
+      marginBottom: "15px",
+      borderRadius: "8px",
+      border: "1px solid #ddd",
+    }}
+  />
+
+  <button
+    style={{
+      background: "#2563eb",
+      color: "#fff",
+      border: "none",
+      padding: "10px 20px",
+      borderRadius: "8px",
+      cursor: "pointer",
+    }}
+  >
+    Analyze
+  </button>
+
+</div>
         <h2>🤖 AI Business Insight</h2>
 
         <hr />
