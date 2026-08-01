@@ -33,6 +33,16 @@ export default function Sidebar() {
         }}
       >
         Mai Nexus AI
+        <p
+  style={{
+    color: "#94a3b8",
+    fontSize: "12px",
+    marginTop: "5px",
+    marginBottom: "30px",
+  }}
+>
+  AI Business Operating System
+</p>
       </h2>
 
       {menus.map((menu) => (
