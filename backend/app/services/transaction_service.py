@@ -72,6 +72,69 @@ def create_transaction(
             .filter(Order.id == transaction.order_id)
             .first()
         )
+        from app.schemas.transaction import TransactionUpdate
+
+
+def update_transaction(
+    db: Session,
+    transaction_id: int,
+    transaction: TransactionUpdate
+):
+
+    db_transaction = get_transaction(db, transaction_id)
+
+    if not db_transaction:
+        return None
+
+    update_data = transaction.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_transaction, key, value)
+
+    db.commit()
+    db.refresh(db_transaction)
+
+    return db_transaction
+
+
+def update_payment_status(
+    db: Session,
+    transaction_id: int,
+    payment_status: str,
+    payment_method: str = None
+):
+
+    db_transaction = get_transaction(db, transaction_id)
+
+    if not db_transaction:
+        return None
+
+    db_transaction.payment_status = payment_status
+
+    if payment_method:
+        db_transaction.payment_method = payment_method
+
+    db.commit()
+    db.refresh(db_transaction)
+
+    return db_transaction
+
+
+def delete_transaction(
+    db: Session,
+    transaction_id: int
+):
+
+    db_transaction = get_transaction(db, transaction_id)
+
+    if not db_transaction:
+        return None
+
+    db.delete(db_transaction)
+
+    db.commit()
+
+    return db_transaction
 
         if not order:
             raise ValueError("Order not found")
