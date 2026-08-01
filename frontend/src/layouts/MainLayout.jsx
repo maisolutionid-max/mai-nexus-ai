@@ -1,7 +1,10 @@
 import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
 
 export default function MainLayout({ children }) {
+
   return (
+
     <div
       style={{
         display: "flex",
@@ -9,16 +12,31 @@ export default function MainLayout({ children }) {
         background: "#f5f7fa",
       }}
     >
+
       <Sidebar />
 
       <div
         style={{
           flex: 1,
-          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {children}
+
+        <Navbar />
+
+        <div
+          style={{
+            padding: "20px",
+          }}
+        >
+          {children}
+        </div>
+
       </div>
+
     </div>
+
   );
+
 }
