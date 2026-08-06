@@ -56,7 +56,7 @@ app.include_router(report_router)
 app.include_router(ai_router)
 app.include_router(iot_router)
 app.include_router(health_router)
-app.include_router(report_api.router)
+
 
 @app.get("/")
 def root():
