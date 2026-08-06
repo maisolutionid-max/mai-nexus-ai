@@ -1,21 +1,29 @@
-from typing import Dict
-
-from .base_agent import BaseAgent
+from app.ai_agents.laundry.order_agent import OrderAgent
+from app.ai_agents.laundry.customer_agent import CustomerAgent
+from app.ai_agents.laundry.inventory_agent import InventoryAgent
+from app.ai_agents.laundry.quality_control_agent import QualityControlAgent
+from app.ai_agents.laundry.chemical_agent import ChemicalAgent
+from app.ai_agents.laundry.predictive_maintenance_agent import PredictiveMaintenanceAgent
+from app.ai_agents.laundry.analytics_agent import AnalyticsAgent
+from app.ai_agents.laundry.notification_agent import NotificationAgent
 
 
 class AgentRegistry:
 
     def __init__(self):
-        self._agents: Dict[str, BaseAgent] = {}
+        self.agents = {
+            "order": OrderAgent(),
+            "customer": CustomerAgent(),
+            "inventory": InventoryAgent(),
+            "quality_control": QualityControlAgent(),
+            "chemical": ChemicalAgent(),
+            "predictive_maintenance": PredictiveMaintenanceAgent(),
+            "analytics": AnalyticsAgent(),
+            "notification": NotificationAgent(),
+        }
 
-    def register(self, name: str, agent: BaseAgent):
-        self._agents[name] = agent
-
-    def get(self, name: str):
-        return self._agents.get(name)
+    def get(self, name):
+        return self.agents.get(name)
 
     def all(self):
-        return self._agents
-
-    def exists(self, name: str):
-        return name in self._agents
+        return self.agents
