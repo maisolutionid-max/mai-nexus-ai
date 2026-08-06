@@ -1,21 +1,23 @@
 from fastapi import APIRouter
+from pydantic import BaseModel
+
 from services.ai_service import ask_ai
 
-from app.ai_agents.orchestrator import AIOrchestrator
 
 router = APIRouter(
     prefix="/ai",
     tags=["AI"]
 )
 
-orchestrator = AIOrchestrator()
+
+class ChatRequest(BaseModel):
+    agent_name: str
+    payload: dict
 
 
-@router.post("/chat")
-def ai_chat(question: str):
-    return ask_ai(question)
-
-
-@router.post("/workflow")
-async def ai_workflow(payload: dict):
-    return await orchestrator.run(payload)
+@router.post("/execute")
+def execute_ai(request: ChatRequest):
+    return ask_ai(
+        agent_name=request.agent_name,
+        payload=request.payload
+    )
