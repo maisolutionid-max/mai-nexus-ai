@@ -1,9 +1,6 @@
-from ai_agents.laundry.laundry_agent import LaundryAgent
+from app.ai_agents.orchestrator import AIOrchestrator
 
+orchestrator = AIOrchestrator()
 
-agent = LaundryAgent()
-
-
-def ask_ai(question: str):
-
-    return agent.chat(question)
+async def ask_ai(payload: dict):
+    return await orchestrator.run(payload)
