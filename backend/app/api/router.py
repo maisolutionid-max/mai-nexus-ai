@@ -11,7 +11,7 @@ from api.report_api import router as report_router
 from api.ai_api import router as ai_router
 from api.iot_api import router as iot_router
 from api.health_api import router as health_router
-
+from api.product_api import router as product_router
 api_router = APIRouter()
 
 api_router.include_router(auth_router)
@@ -25,3 +25,4 @@ api_router.include_router(report_router)
 api_router.include_router(ai_router)
 api_router.include_router(iot_router)
 api_router.include_router(health_router)
+api_router.include_router(product_router)
