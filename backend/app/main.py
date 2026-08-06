@@ -1,54 +1,65 @@
 """
 MAI Nexus AI
-Central API Router
-
-Semua endpoint diregistrasikan pada file ini.
-main.py hanya perlu memanggil api_router.
+Main Application
 
 Author : MAI Solution Hub
 """
 
-from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.auth_api import router as auth_router
-from app.api.customer_api import router as customer_router
-from app.api.order_api import router as order_router
-from app.api.payment_api import router as payment_router
-from app.api.dashboard_api import router as dashboard_router
-from app.api.inventory_api import router as inventory_router
-from app.api.product_api import router as product_router
-from app.api.transaction_api import router as transaction_router
-from app.api.notification_api import router as notification_router
-from app.api.report_api import router as report_router
-from app.api.ai_api import router as ai_router
-from app.api.iot_api import router as iot_router
-from app.api.health_api import router as health_router
+from app.config import settings
+from app.database import Base, engine
 
-api_router = APIRouter()
+# Import Models
+from app.models.user import User
+from app.models.customer import Customer
+from app.models.order import Order
+from app.models.payment import Payment
+from app.models.inventory import Inventory
+from app.models.notification import Notification
+from app.models.sensor import Sensor
 
-# Authentication
-api_router.include_router(auth_router)
+# Central Router
+from app.api.router import api_router
 
-# Core Business
-api_router.include_router(customer_router)
-api_router.include_router(order_router)
-api_router.include_router(payment_router)
-api_router.include_router(product_router)
-api_router.include_router(inventory_router)
-api_router.include_router(transaction_router)
+# Create Database Tables
+Base.metadata.create_all(bind=engine)
 
-# Dashboard & Reporting
-api_router.include_router(dashboard_router)
-api_router.include_router(report_router)
+# FastAPI Application
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG,
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 
-# AI Services
-api_router.include_router(ai_router)
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS.split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# IoT Services
-api_router.include_router(iot_router)
+# Register All API Routes
+app.include_router(api_router)
 
-# Notification
-api_router.include_router(notification_router)
 
-# System
-api_router.include_router(health_router)
+@app.get("/", tags=["System"])
+def root():
+    return {
+        "application": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "status": "running",
+        "message": "Welcome to MAI Nexus AI Backend"
+    }
+
+
+@app.get("/ping", tags=["System"])
+def ping():
+    return {
+        "status": "ok"
+    }
