@@ -15,7 +15,10 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table":
+        return name.startswith("education_")
+    return True
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
