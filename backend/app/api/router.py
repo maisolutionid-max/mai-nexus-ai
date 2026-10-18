@@ -23,6 +23,7 @@ from app.api.report_api import router as report_router
 from app.api.ai_api import router as ai_router
 from app.api.iot_api import router as iot_router
 from app.api.health_api import router as health_router
+from app.api.education_api import router as education_router
 
 api_router = APIRouter()
 
@@ -52,3 +53,6 @@ api_router.include_router(notification_router)
 
 # System
 api_router.include_router(health_router)
+
+# Education Services
+api_router.include_router(education_router)
