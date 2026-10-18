@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -56,11 +57,12 @@ def create_transaction(db: Session, transaction: TransactionCreate):
     db_transaction = Transaction(
         invoice_number=generate_invoice_number(db),
         customer_id=transaction.customer_id,
-        subtotal=transaction.subtotal,
-        discount=transaction.discount,
-        tax=transaction.tax,
-        total_amount=transaction.total,
+        subtotal=float(transaction.subtotal),
+        discount=float(transaction.discount),
+        tax=float(transaction.tax),
+        total_amount=float(transaction.total),
         payment_status=transaction.payment_status,
+        payment_method=transaction.payment_method,
         notes=transaction.notes,
     )
 
@@ -81,7 +83,10 @@ def update_transaction(
     if not db_transaction:
         return None
 
-    update_data = transaction.model_dump(exclude_unset=True)
+    update_data = transaction.model_dump(
+        exclude_unset=True,
+        exclude_none=True,
+    )
 
     if "total" in update_data:
         update_data["total_amount"] = update_data.pop("total")
@@ -99,7 +104,7 @@ def update_payment_status(
     db: Session,
     transaction_id: int,
     payment_status: str,
-    payment_method: str = None,
+    payment_method: Optional[str] = None,
 ):
     db_transaction = get_transaction(db, transaction_id)
 
@@ -108,7 +113,7 @@ def update_payment_status(
 
     db_transaction.payment_status = payment_status
 
-    if payment_method:
+    if payment_method is not None:
         db_transaction.payment_method = payment_method
 
     db.commit()
