@@ -1,22 +1,19 @@
-from pydantic import BaseModel
+
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
 
 
-class TransactionBase(BaseModel):
-    transaction_number: str
+class TransactionCreate(BaseModel):
     customer_id: int
-    subtotal: Decimal
+    subtotal: Decimal = Decimal("0.00")
     discount: Decimal = Decimal("0.00")
     tax: Decimal = Decimal("0.00")
     total: Decimal
     payment_status: str = "UNPAID"
+    payment_method: Optional[str] = None
     notes: Optional[str] = None
-
-
-class TransactionCreate(TransactionBase):
-    pass
 
 
 class TransactionUpdate(BaseModel):
@@ -25,13 +22,22 @@ class TransactionUpdate(BaseModel):
     tax: Optional[Decimal] = None
     total: Optional[Decimal] = None
     payment_status: Optional[str] = None
+    payment_method: Optional[str] = None
     notes: Optional[str] = None
 
 
-class TransactionResponse(TransactionBase):
+class TransactionResponse(BaseModel):
     id: int
+    invoice_number: str
+    customer_id: int
+    subtotal: Decimal
+    discount: Decimal
+    tax: Decimal
+    total_amount: Decimal
+    payment_status: str
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
