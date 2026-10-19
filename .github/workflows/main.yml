@@ -28,6 +28,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install alembic sqlalchemy pydantic-settings psycopg2-binary
 
+      
       - name: Check Education migration configuration
         working-directory: backend
+        env:
+          DATABASE_URL: "sqlite:///./education_ci.db"
+          SECRET_KEY: "ci-only-test-secret-not-for-production"
         run: alembic -c alembic.ini history
+
