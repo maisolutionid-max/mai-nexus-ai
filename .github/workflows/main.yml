@@ -1,4 +1,3 @@
-
 name: MAI Nexus AI Education Checks
 
 on:
@@ -28,7 +27,14 @@ jobs:
       - name: Install migration dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install alembic sqlalchemy pydantic-settings psycopg2-binary
+          python -m pip install alembic sqlalchemy pydantic-settings psycopg2-binary pytest fastapi httpx
+
+      - name: Run Education model tests
+        working-directory: backend
+        env:
+          DATABASE_URL: "sqlite:///./education_ci.db"
+          SECRET_KEY: "ci-only-test-secret-not-for-production"
+        run: python -m pytest tests/test_education_school.py -v
 
       - name: Check Education migration history
         working-directory: backend
