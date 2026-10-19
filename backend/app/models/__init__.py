@@ -1,3 +1,4 @@
+from .education_school import EducationSchool
 from .user import User
 from .customer import Customer
 from .order import Order
@@ -14,4 +15,5 @@ __all__ = [
     "Inventory",
     "Notification",
     "Sensor",
+    "EducationSchool",
 ]
