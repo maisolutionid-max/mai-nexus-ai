@@ -1,6 +1,7 @@
 
 from .tenant import Tenant
 from .education_school import EducationSchool
+from .education_tenant_user import EducationTenantUser
 from .user import User
 from .customer import Customer
 from .order import Order
@@ -19,4 +20,5 @@ __all__ = [
     "Notification",
     "Sensor",
     "EducationSchool",
+    "EducationTenantUser",
 ]
