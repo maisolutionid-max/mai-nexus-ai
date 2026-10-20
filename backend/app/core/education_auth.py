@@ -1,7 +1,7 @@
 
 """
 MAI Nexus AI Education
-Authentication and Active User Validation
+Authentication, Active User, and Tenant Validation
 Author: MAI Solution Hub
 """
 
@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
+from app.models.education_tenant_user import EducationTenantUser
+from app.models.tenant import Tenant
 
 
 education_oauth2_scheme = OAuth2PasswordBearer(
@@ -65,7 +67,35 @@ def get_education_current_user(
             detail="Akun pengguna tidak aktif",
         )
 
+    assignment = (
+        db.query(EducationTenantUser)
+        .filter(EducationTenantUser.user_id == user.id)
+        .first()
+    )
+
+    if assignment is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Pengguna belum ditetapkan ke tenant Education",
+        )
+
+    tenant = (
+        db.query(Tenant)
+        .filter(
+            Tenant.id == assignment.tenant_id,
+            Tenant.is_active.is_(True),
+        )
+        .first()
+    )
+
+    if tenant is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tenant tidak ditemukan atau tidak aktif",
+        )
+
     return {
         "user_id": user.id,
         "role": user.role,
+        "tenant_id": tenant.id,
     }
