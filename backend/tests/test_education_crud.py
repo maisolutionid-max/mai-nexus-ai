@@ -512,3 +512,25 @@ def test_education_health_is_public():
     response = client.get("/education/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+def test_inactive_tenant_rejected():
+    tenant_id = create_test_tenant(name="Tenant Nonaktif")
+    headers = auth_headers("ADMIN", tenant_id=tenant_id)
+
+    db = TestingSessionLocal()
+    try:
+        tenant = db.query(Tenant).filter(
+            Tenant.id == tenant_id
+        ).first()
+        assert tenant is not None
+
+        tenant.is_active = False
+        db.commit()
+    finally:
+        db.close()
+
+    response = client.get(
+        "/education/schools",
+        headers=headers,
+    )
+    assert response.status_code == 403
+            
