@@ -9,6 +9,8 @@ from .payment import Payment
 from .inventory import Inventory
 from .notification import Notification
 from .sensor import Sensor
+from app.models.education_student import EducationStudent
+
 
 __all__ = [
     "Tenant",
