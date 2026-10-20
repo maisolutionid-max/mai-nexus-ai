@@ -1,3 +1,4 @@
+
 """Create tenants and link education schools.
 
 Revision ID: 20261020_0002
@@ -15,11 +16,12 @@ depends_on = None
 
 
 def upgrade():
+    # 1. Create tenants table first.
     op.create_table(
         "tenants",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("name", sa.String(length=200), nullable=False),
-        sa.Column("slug", sa.String(length=100), nullable=False),
+        sa.Column("name", sa.String(200), nullable=False),
+        sa.Column("slug", sa.String(100), nullable=False),
         sa.Column(
             "is_active",
             sa.Boolean(),
@@ -38,7 +40,6 @@ def upgrade():
             nullable=True,
             server_default=sa.func.now(),
         ),
-        sa.UniqueConstraint("slug", name="uq_tenants_slug"),
     )
 
     op.create_index(
@@ -53,52 +54,53 @@ def upgrade():
         unique=True,
     )
 
-    op.add_column(
+    # 2. SQLite requires batch mode to add a foreign key
+    # to an existing table.
+    with op.batch_alter_table(
         "education_schools",
-        sa.Column("tenant_id", sa.Integer(), nullable=True),
-    )
+        recreate="always",
+    ) as batch_op:
+        batch_op.add_column(
+            sa.Column("tenant_id", sa.Integer(), nullable=True)
+        )
 
-    op.create_foreign_key(
-        "fk_education_schools_tenant_id",
-        "education_schools",
-        "tenants",
-        ["tenant_id"],
-        ["id"],
-        ondelete="RESTRICT",
-    )
+        batch_op.create_foreign_key(
+            "fk_education_schools_tenant_id",
+            "tenants",
+            ["tenant_id"],
+            ["id"],
+            ondelete="RESTRICT",
+        )
 
-    op.create_index(
-        "ix_education_schools_tenant_id",
-        "education_schools",
-        ["tenant_id"],
-    )
+        batch_op.create_index(
+            "ix_education_schools_tenant_id",
+            ["tenant_id"],
+        )
 
-    op.create_index(
-        "ix_education_schools_tenant_active",
-        "education_schools",
-        ["tenant_id", "is_active"],
-    )
+        batch_op.create_index(
+            "ix_education_schools_tenant_active",
+            ["tenant_id", "is_active"],
+        )
 
 
 def downgrade():
-    op.drop_index(
-        "ix_education_schools_tenant_active",
-        table_name="education_schools",
-    )
-    op.drop_index(
-        "ix_education_schools_tenant_id",
-        table_name="education_schools",
-    )
-
-    op.drop_constraint(
-        "fk_education_schools_tenant_id",
+    # Remove tenant relationship using SQLite batch mode.
+    with op.batch_alter_table(
         "education_schools",
-        type_="foreignkey",
-    )
-
-    op.drop_column("education_schools", "tenant_id")
+        recreate="always",
+    ) as batch_op:
+        batch_op.drop_index(
+            "ix_education_schools_tenant_active",
+        )
+        batch_op.drop_index(
+            "ix_education_schools_tenant_id",
+        )
+        batch_op.drop_constraint(
+            "fk_education_schools_tenant_id",
+            type_="foreignkey",
+        )
+        batch_op.drop_column("tenant_id")
 
     op.drop_index("ix_tenants_slug", table_name="tenants")
     op.drop_index("ix_tenants_name", table_name="tenants")
     op.drop_table("tenants")
-          
