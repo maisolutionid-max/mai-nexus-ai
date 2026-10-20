@@ -1,14 +1,18 @@
 
 """
 MAI Nexus AI Education API
-School management endpoints with JWT authentication.
+School management endpoints with JWT authentication and RBAC.
+
+Author: MAI Solution Hub
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.core.education_auth import get_education_current_user
+from app.core.education_permissions import (
+    require_education_permission,
+)
 from app.models.education_school import EducationSchool
 from app.schemas.education_school import (
     EducationSchoolCreate,
@@ -16,13 +20,16 @@ from app.schemas.education_school import (
     EducationSchoolResponse,
 )
 
+
 router = APIRouter(
     prefix="/education",
     tags=["Education"],
 )
 
 
-# Public endpoints
+# ============================================================
+# PUBLIC ENDPOINTS
+# ============================================================
 
 @router.get("/")
 def education_status():
@@ -41,7 +48,10 @@ def education_health():
     }
 
 
-# Protected CRUD endpoints
+# ============================================================
+# CREATE SCHOOL
+# Permission: education:schools:create
+# ============================================================
 
 @router.post(
     "/schools",
@@ -51,7 +61,11 @@ def education_health():
 def create_school(
     payload: EducationSchoolCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_education_current_user),
+    current_user: dict = Depends(
+        require_education_permission(
+            "education:schools:create"
+        )
+    ),
 ):
     if payload.npsn:
         existing = (
@@ -59,6 +73,7 @@ def create_school(
             .filter(EducationSchool.npsn == payload.npsn)
             .first()
         )
+
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -66,11 +81,22 @@ def create_school(
             )
 
     school = EducationSchool(**payload.model_dump())
-    db.add(school)
-    db.commit()
-    db.refresh(school)
+
+    try:
+        db.add(school)
+        db.commit()
+        db.refresh(school)
+    except Exception:
+        db.rollback()
+        raise
+
     return school
 
+
+# ============================================================
+# LIST SCHOOLS
+# Permission: education:schools:read
+# ============================================================
 
 @router.get(
     "/schools",
@@ -78,7 +104,11 @@ def create_school(
 )
 def list_schools(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_education_current_user),
+    current_user: dict = Depends(
+        require_education_permission(
+            "education:schools:read"
+        )
+    ),
 ):
     return (
         db.query(EducationSchool)
@@ -87,6 +117,11 @@ def list_schools(
     )
 
 
+# ============================================================
+# GET SCHOOL DETAIL
+# Permission: education:schools:read
+# ============================================================
+
 @router.get(
     "/schools/{school_id}",
     response_model=EducationSchoolResponse,
@@ -94,7 +129,11 @@ def list_schools(
 def get_school(
     school_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_education_current_user),
+    current_user: dict = Depends(
+        require_education_permission(
+            "education:schools:read"
+        )
+    ),
 ):
     school = (
         db.query(EducationSchool)
@@ -102,7 +141,7 @@ def get_school(
         .first()
     )
 
-    if not school:
+    if school is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Sekolah tidak ditemukan",
@@ -110,6 +149,11 @@ def get_school(
 
     return school
 
+
+# ============================================================
+# UPDATE SCHOOL
+# Permission: education:schools:update
+# ============================================================
 
 @router.patch(
     "/schools/{school_id}",
@@ -119,7 +163,11 @@ def update_school(
     school_id: int,
     payload: EducationSchoolUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_education_current_user),
+    current_user: dict = Depends(
+        require_education_permission(
+            "education:schools:update"
+        )
+    ),
 ):
     school = (
         db.query(EducationSchool)
@@ -127,7 +175,7 @@ def update_school(
         .first()
     )
 
-    if not school:
+    if school is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Sekolah tidak ditemukan",
@@ -144,6 +192,7 @@ def update_school(
             )
             .first()
         )
+
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -153,6 +202,51 @@ def update_school(
     for key, value in changes.items():
         setattr(school, key, value)
 
-    db.commit()
-    db.refresh(school)
+    try:
+        db.commit()
+        db.refresh(school)
+    except Exception:
+        db.rollback()
+        raise
+
     return school
+
+
+# ============================================================
+# DELETE SCHOOL
+# Permission: education:schools:delete
+# ============================================================
+
+@router.delete(
+    "/schools/{school_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_school(
+    school_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_education_permission(
+            "education:schools:delete"
+        )
+    ),
+):
+    school = (
+        db.query(EducationSchool)
+        .filter(EducationSchool.id == school_id)
+        .first()
+    )
+
+    if school is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sekolah tidak ditemukan",
+        )
+
+    try:
+        db.delete(school)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return None
