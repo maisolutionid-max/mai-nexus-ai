@@ -1,3 +1,5 @@
+
+from .tenant import Tenant
 from .education_school import EducationSchool
 from .user import User
 from .customer import Customer
@@ -8,6 +10,7 @@ from .notification import Notification
 from .sensor import Sensor
 
 __all__ = [
+    "Tenant",
     "User",
     "Customer",
     "Order",
