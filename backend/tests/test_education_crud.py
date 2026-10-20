@@ -1,13 +1,14 @@
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from jose import jwt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from app.database import Base, get_db
-from app.models.education_school import EducationSchool
 from app.api.education_api import router
+from app.config import settings
+from app.database import Base, get_db
 
 
 engine = create_engine(
@@ -21,8 +22,6 @@ TestingSessionLocal = sessionmaker(
     autoflush=False,
     bind=engine,
 )
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.include_router(router)
@@ -40,14 +39,32 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
+def make_test_token():
+    return jwt.encode(
+        {"sub": "test-user", "role": "ADMIN"},
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+    )
+
+
+def auth_headers():
+    return {"Authorization": f"Bearer {make_test_token()}"}
+
+
 def setup_function():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
 
+def test_school_crud_requires_authentication():
+    response = client.get("/education/schools")
+    assert response.status_code == 401
+
+
 def test_create_and_list_school():
     response = client.post(
         "/education/schools",
+        headers=auth_headers(),
         json={
             "name": "Sekolah Uji",
             "school_level": "SMA",
@@ -57,7 +74,10 @@ def test_create_and_list_school():
     assert response.status_code == 201
     assert response.json()["name"] == "Sekolah Uji"
 
-    response = client.get("/education/schools")
+    response = client.get(
+        "/education/schools",
+        headers=auth_headers(),
+    )
     assert response.status_code == 200
     assert len(response.json()) == 1
 
@@ -65,21 +85,33 @@ def test_create_and_list_school():
 def test_get_update_and_missing_school():
     created = client.post(
         "/education/schools",
-        json={"name": "Sekolah Lama", "school_level": "SMA"},
+        headers=auth_headers(),
+        json={
+            "name": "Sekolah Lama",
+            "school_level": "SMA",
+        },
     )
+    assert created.status_code == 201
     school_id = created.json()["id"]
 
-    response = client.get(f"/education/schools/{school_id}")
+    response = client.get(
+        f"/education/schools/{school_id}",
+        headers=auth_headers(),
+    )
     assert response.status_code == 200
 
     response = client.patch(
         f"/education/schools/{school_id}",
+        headers=auth_headers(),
         json={"name": "Sekolah Baru"},
     )
     assert response.status_code == 200
     assert response.json()["name"] == "Sekolah Baru"
 
-    response = client.get("/education/schools/99999")
+    response = client.get(
+        "/education/schools/99999",
+        headers=auth_headers(),
+    )
     assert response.status_code == 404
 
 
@@ -89,11 +121,18 @@ def test_duplicate_npsn_rejected():
         "school_level": "SMA",
         "npsn": "87654321",
     }
-    assert client.post("/education/schools", json=payload).status_code == 201
 
-    duplicate = {
-        **payload,
-        "name": "Sekolah Dua",
-    }
-    response = client.post("/education/schools", json=duplicate)
+    first = client.post(
+        "/education/schools",
+        headers=auth_headers(),
+        json=payload,
+    )
+    assert first.status_code == 201
+
+    duplicate = {**payload, "name": "Sekolah Dua"}
+    response = client.post(
+        "/education/schools",
+        headers=auth_headers(),
+        json=duplicate,
+    )
     assert response.status_code == 409
