@@ -16,6 +16,7 @@ from sqlalchemy import (
     Integer,
     String,
 )
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -31,8 +32,9 @@ class EducationSchool(Base):
     )
 
     # Tenant ownership.
-    # Nullable initially to preserve compatibility with existing records.
-    # Enforce tenant ownership after migrating existing data.
+    # Nullable for compatibility with existing records.
+    # Existing records must be assigned to a tenant before
+    # making this column non-nullable.
     tenant_id = Column(
         Integer,
         ForeignKey("tenants.id", ondelete="RESTRICT"),
@@ -89,6 +91,13 @@ class EducationSchool(Base):
         nullable=True,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    # Relationship to the tenant model.
+    # Requires a Tenant model mapped to the "tenants" table.
+    tenant = relationship(
+        "Tenant",
+        back_populates="schools",
     )
 
     __table_args__ = (
