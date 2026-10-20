@@ -1,7 +1,7 @@
 
 """
 MAI Nexus AI Education API
-School management endpoints with JWT authentication and RBAC.
+Tenant-isolated school management endpoints.
 
 Author: MAI Solution Hub
 """
@@ -27,9 +27,18 @@ router = APIRouter(
 )
 
 
-# ============================================================
-# PUBLIC ENDPOINTS
-# ============================================================
+def get_tenant_id(current_user: dict) -> int:
+    """Require a verified tenant assignment."""
+    tenant_id = current_user.get("tenant_id")
+
+    if tenant_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Pengguna belum ditetapkan ke tenant Education",
+        )
+
+    return int(tenant_id)
+
 
 @router.get("/")
 def education_status():
@@ -48,11 +57,6 @@ def education_health():
     }
 
 
-# ============================================================
-# CREATE SCHOOL
-# Permission: education:schools:create
-# ============================================================
-
 @router.post(
     "/schools",
     response_model=EducationSchoolResponse,
@@ -62,11 +66,11 @@ def create_school(
     payload: EducationSchoolCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission(
-            "education:schools:create"
-        )
+        require_education_permission("education:schools:create")
     ),
 ):
+    tenant_id = get_tenant_id(current_user)
+
     if payload.npsn:
         existing = (
             db.query(EducationSchool)
@@ -80,7 +84,10 @@ def create_school(
                 detail="NPSN sudah terdaftar",
             )
 
-    school = EducationSchool(**payload.model_dump())
+    school_data = payload.model_dump()
+    school_data["tenant_id"] = tenant_id
+
+    school = EducationSchool(**school_data)
 
     try:
         db.add(school)
@@ -93,11 +100,6 @@ def create_school(
     return school
 
 
-# ============================================================
-# LIST SCHOOLS
-# Permission: education:schools:read
-# ============================================================
-
 @router.get(
     "/schools",
     response_model=list[EducationSchoolResponse],
@@ -105,22 +107,18 @@ def create_school(
 def list_schools(
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission(
-            "education:schools:read"
-        )
+        require_education_permission("education:schools:read")
     ),
 ):
+    tenant_id = get_tenant_id(current_user)
+
     return (
         db.query(EducationSchool)
+        .filter(EducationSchool.tenant_id == tenant_id)
         .order_by(EducationSchool.id.desc())
         .all()
     )
 
-
-# ============================================================
-# GET SCHOOL DETAIL
-# Permission: education:schools:read
-# ============================================================
 
 @router.get(
     "/schools/{school_id}",
@@ -130,14 +128,17 @@ def get_school(
     school_id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission(
-            "education:schools:read"
-        )
+        require_education_permission("education:schools:read")
     ),
 ):
+    tenant_id = get_tenant_id(current_user)
+
     school = (
         db.query(EducationSchool)
-        .filter(EducationSchool.id == school_id)
+        .filter(
+            EducationSchool.id == school_id,
+            EducationSchool.tenant_id == tenant_id,
+        )
         .first()
     )
 
@@ -150,11 +151,6 @@ def get_school(
     return school
 
 
-# ============================================================
-# UPDATE SCHOOL
-# Permission: education:schools:update
-# ============================================================
-
 @router.patch(
     "/schools/{school_id}",
     response_model=EducationSchoolResponse,
@@ -164,14 +160,17 @@ def update_school(
     payload: EducationSchoolUpdate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission(
-            "education:schools:update"
-        )
+        require_education_permission("education:schools:update")
     ),
 ):
+    tenant_id = get_tenant_id(current_user)
+
     school = (
         db.query(EducationSchool)
-        .filter(EducationSchool.id == school_id)
+        .filter(
+            EducationSchool.id == school_id,
+            EducationSchool.tenant_id == tenant_id,
+        )
         .first()
     )
 
@@ -199,6 +198,9 @@ def update_school(
                 detail="NPSN sudah terdaftar",
             )
 
+    # Never accept tenant ownership changes through the request body.
+    changes.pop("tenant_id", None)
+
     for key, value in changes.items():
         setattr(school, key, value)
 
@@ -212,11 +214,6 @@ def update_school(
     return school
 
 
-# ============================================================
-# DELETE SCHOOL
-# Permission: education:schools:delete
-# ============================================================
-
 @router.delete(
     "/schools/{school_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -225,14 +222,17 @@ def delete_school(
     school_id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission(
-            "education:schools:delete"
-        )
+        require_education_permission("education:schools:delete")
     ),
 ):
+    tenant_id = get_tenant_id(current_user)
+
     school = (
         db.query(EducationSchool)
-        .filter(EducationSchool.id == school_id)
+        .filter(
+            EducationSchool.id == school_id,
+            EducationSchool.tenant_id == tenant_id,
+        )
         .first()
     )
 
