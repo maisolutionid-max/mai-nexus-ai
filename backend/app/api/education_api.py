@@ -1,7 +1,14 @@
+
+"""
+MAI Nexus AI Education API
+School management endpoints with JWT authentication.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.core.education_auth import get_education_current_user
 from app.models.education_school import EducationSchool
 from app.schemas.education_school import (
     EducationSchoolCreate,
@@ -15,6 +22,8 @@ router = APIRouter(
 )
 
 
+# Public endpoints
+
 @router.get("/")
 def education_status():
     return {
@@ -26,8 +35,13 @@ def education_status():
 
 @router.get("/health")
 def education_health():
-    return {"module": "education", "status": "ok"}
+    return {
+        "module": "education",
+        "status": "ok",
+    }
 
+
+# Protected CRUD endpoints
 
 @router.post(
     "/schools",
@@ -37,14 +51,17 @@ def education_health():
 def create_school(
     payload: EducationSchoolCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_education_current_user),
 ):
     if payload.npsn:
-        existing = db.query(EducationSchool).filter(
-            EducationSchool.npsn == payload.npsn
-        ).first()
+        existing = (
+            db.query(EducationSchool)
+            .filter(EducationSchool.npsn == payload.npsn)
+            .first()
+        )
         if existing:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="NPSN sudah terdaftar",
             )
 
@@ -55,47 +72,83 @@ def create_school(
     return school
 
 
-@router.get("/schools", response_model=list[EducationSchoolResponse])
+@router.get(
+    "/schools",
+    response_model=list[EducationSchoolResponse],
+)
 def list_schools(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_education_current_user),
 ):
-    return db.query(EducationSchool).order_by(EducationSchool.id.desc()).all()
+    return (
+        db.query(EducationSchool)
+        .order_by(EducationSchool.id.desc())
+        .all()
+    )
 
 
-@router.get("/schools/{school_id}", response_model=EducationSchoolResponse)
+@router.get(
+    "/schools/{school_id}",
+    response_model=EducationSchoolResponse,
+)
 def get_school(
     school_id: int,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_education_current_user),
 ):
-    school = db.query(EducationSchool).filter(
-        EducationSchool.id == school_id
-    ).first()
+    school = (
+        db.query(EducationSchool)
+        .filter(EducationSchool.id == school_id)
+        .first()
+    )
+
     if not school:
-        raise HTTPException(status_code=404, detail="Sekolah tidak ditemukan")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sekolah tidak ditemukan",
+        )
+
     return school
 
 
-@router.patch("/schools/{school_id}", response_model=EducationSchoolResponse)
+@router.patch(
+    "/schools/{school_id}",
+    response_model=EducationSchoolResponse,
+)
 def update_school(
     school_id: int,
     payload: EducationSchoolUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_education_current_user),
 ):
-    school = db.query(EducationSchool).filter(
-        EducationSchool.id == school_id
-    ).first()
+    school = (
+        db.query(EducationSchool)
+        .filter(EducationSchool.id == school_id)
+        .first()
+    )
+
     if not school:
-        raise HTTPException(status_code=404, detail="Sekolah tidak ditemukan")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sekolah tidak ditemukan",
+        )
 
     changes = payload.model_dump(exclude_unset=True)
 
     if changes.get("npsn"):
-        existing = db.query(EducationSchool).filter(
-            EducationSchool.npsn == changes["npsn"],
-            EducationSchool.id != school_id,
-        ).first()
+        existing = (
+            db.query(EducationSchool)
+            .filter(
+                EducationSchool.npsn == changes["npsn"],
+                EducationSchool.id != school_id,
+            )
+            .first()
+        )
         if existing:
-            raise HTTPException(status_code=409, detail="NPSN sudah terdaftar")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="NPSN sudah terdaftar",
+            )
 
     for key, value in changes.items():
         setattr(school, key, value)
