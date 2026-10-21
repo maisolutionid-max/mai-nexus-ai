@@ -222,11 +222,11 @@ def update_school(
     ),
 ):
     tenant_id = get_tenant_id(current_user)
-
     school = get_school_for_tenant(db, school_id, tenant_id)
+
     changes = payload.model_dump(exclude_unset=True)
 
-    # Never accept tenant ownership changes through the request body.
+    # Tenant ownership cannot be changed through the request body.
     changes.pop("tenant_id", None)
 
     if changes.get("npsn"):
@@ -307,12 +307,12 @@ def create_student(
     payload: EducationStudentCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission("education:schools:create")
+        require_education_permission("education:students:create")
     ),
 ):
     tenant_id = get_tenant_id(current_user)
 
-    # The school must belong to the authenticated tenant.
+    # A student can only be assigned to a school in this tenant.
     get_school_for_tenant(db, payload.school_id, tenant_id)
 
     duplicate = (
@@ -363,7 +363,7 @@ def list_students(
     school_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission("education:schools:read")
+        require_education_permission("education:students:read")
     ),
 ):
     tenant_id = get_tenant_id(current_user)
@@ -389,7 +389,7 @@ def get_student(
     student_id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission("education:schools:read")
+        require_education_permission("education:students:read")
     ),
 ):
     tenant_id = get_tenant_id(current_user)
@@ -406,7 +406,7 @@ def update_student(
     payload: EducationStudentUpdate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission("education:schools:update")
+        require_education_permission("education:students:update")
     ),
 ):
     tenant_id = get_tenant_id(current_user)
@@ -432,7 +432,7 @@ def update_student(
                 detail="Nomor siswa sudah terdaftar pada tenant ini",
             )
 
-    # school_id and tenant_id cannot be changed through this schema.
+    # The update schema does not accept tenant_id or school_id.
     for key, value in changes.items():
         setattr(student, key, value)
 
@@ -460,7 +460,7 @@ def delete_student(
     student_id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(
-        require_education_permission("education:schools:delete")
+        require_education_permission("education:students:delete")
     ),
 ):
     tenant_id = get_tenant_id(current_user)
