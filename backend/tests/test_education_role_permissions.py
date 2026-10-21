@@ -1,4 +1,3 @@
-
 import pytest
 
 from app.core.education_permissions import has_education_permission
