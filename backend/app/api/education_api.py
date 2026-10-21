@@ -1,12 +1,13 @@
 
 """
 MAI Nexus AI Education API
-Tenant-isolated school management endpoints.
+Tenant-isolated school and student management endpoints.
 
 Author: MAI Solution Hub
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,10 +15,16 @@ from app.core.education_permissions import (
     require_education_permission,
 )
 from app.models.education_school import EducationSchool
+from app.models.education_student import EducationStudent
 from app.schemas.education_school import (
     EducationSchoolCreate,
     EducationSchoolUpdate,
     EducationSchoolResponse,
+)
+from app.schemas.education_student import (
+    EducationStudentCreate,
+    EducationStudentUpdate,
+    EducationStudentResponse,
 )
 
 
@@ -26,6 +33,10 @@ router = APIRouter(
     tags=["Education"],
 )
 
+
+# =========================================================
+# SHARED HELPERS
+# =========================================================
 
 def get_tenant_id(current_user: dict) -> int:
     """Require a verified tenant assignment."""
@@ -39,6 +50,58 @@ def get_tenant_id(current_user: dict) -> int:
 
     return int(tenant_id)
 
+
+def get_school_for_tenant(
+    db: Session,
+    school_id: int,
+    tenant_id: int,
+) -> EducationSchool:
+    """Return a school only if it belongs to the current tenant."""
+    school = (
+        db.query(EducationSchool)
+        .filter(
+            EducationSchool.id == school_id,
+            EducationSchool.tenant_id == tenant_id,
+        )
+        .first()
+    )
+
+    if school is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sekolah tidak ditemukan",
+        )
+
+    return school
+
+
+def get_student_for_tenant(
+    db: Session,
+    student_id: int,
+    tenant_id: int,
+) -> EducationStudent:
+    """Return a student only if it belongs to the current tenant."""
+    student = (
+        db.query(EducationStudent)
+        .filter(
+            EducationStudent.id == student_id,
+            EducationStudent.tenant_id == tenant_id,
+        )
+        .first()
+    )
+
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Siswa tidak ditemukan",
+        )
+
+    return student
+
+
+# =========================================================
+# EDUCATION STATUS
+# =========================================================
 
 @router.get("/")
 def education_status():
@@ -56,6 +119,10 @@ def education_health():
         "status": "ok",
     }
 
+
+# =========================================================
+# SCHOOL MANAGEMENT
+# =========================================================
 
 @router.post(
     "/schools",
@@ -93,6 +160,12 @@ def create_school(
         db.add(school)
         db.commit()
         db.refresh(school)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Data sekolah bertentangan dengan data yang sudah ada",
+        )
     except Exception:
         db.rollback()
         raise
@@ -133,22 +206,7 @@ def get_school(
 ):
     tenant_id = get_tenant_id(current_user)
 
-    school = (
-        db.query(EducationSchool)
-        .filter(
-            EducationSchool.id == school_id,
-            EducationSchool.tenant_id == tenant_id,
-        )
-        .first()
-    )
-
-    if school is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sekolah tidak ditemukan",
-        )
-
-    return school
+    return get_school_for_tenant(db, school_id, tenant_id)
 
 
 @router.patch(
@@ -165,22 +223,11 @@ def update_school(
 ):
     tenant_id = get_tenant_id(current_user)
 
-    school = (
-        db.query(EducationSchool)
-        .filter(
-            EducationSchool.id == school_id,
-            EducationSchool.tenant_id == tenant_id,
-        )
-        .first()
-    )
-
-    if school is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sekolah tidak ditemukan",
-        )
-
+    school = get_school_for_tenant(db, school_id, tenant_id)
     changes = payload.model_dump(exclude_unset=True)
+
+    # Never accept tenant ownership changes through the request body.
+    changes.pop("tenant_id", None)
 
     if changes.get("npsn"):
         existing = (
@@ -198,15 +245,18 @@ def update_school(
                 detail="NPSN sudah terdaftar",
             )
 
-    # Never accept tenant ownership changes through the request body.
-    changes.pop("tenant_id", None)
-
     for key, value in changes.items():
         setattr(school, key, value)
 
     try:
         db.commit()
         db.refresh(school)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Perubahan sekolah bertentangan dengan data yang sudah ada",
+        )
     except Exception:
         db.rollback()
         raise
@@ -226,25 +276,205 @@ def delete_school(
     ),
 ):
     tenant_id = get_tenant_id(current_user)
-
-    school = (
-        db.query(EducationSchool)
-        .filter(
-            EducationSchool.id == school_id,
-            EducationSchool.tenant_id == tenant_id,
-        )
-        .first()
-    )
-
-    if school is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sekolah tidak ditemukan",
-        )
+    school = get_school_for_tenant(db, school_id, tenant_id)
 
     try:
         db.delete(school)
         db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Sekolah tidak dapat dihapus karena masih memiliki data terkait",
+        )
+    except Exception:
+        db.rollback()
+        raise
+
+    return None
+
+
+# =========================================================
+# STUDENT MANAGEMENT
+# =========================================================
+
+@router.post(
+    "/students",
+    response_model=EducationStudentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_student(
+    payload: EducationStudentCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_education_permission("education:schools:create")
+    ),
+):
+    tenant_id = get_tenant_id(current_user)
+
+    # The school must belong to the authenticated tenant.
+    get_school_for_tenant(db, payload.school_id, tenant_id)
+
+    duplicate = (
+        db.query(EducationStudent)
+        .filter(
+            EducationStudent.tenant_id == tenant_id,
+            EducationStudent.student_number == payload.student_number,
+        )
+        .first()
+    )
+
+    if duplicate:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Nomor siswa sudah terdaftar pada tenant ini",
+        )
+
+    student = EducationStudent(
+        tenant_id=tenant_id,
+        school_id=payload.school_id,
+        student_number=payload.student_number,
+        full_name=payload.full_name,
+        is_active=payload.is_active,
+    )
+
+    try:
+        db.add(student)
+        db.commit()
+        db.refresh(student)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Data siswa bertentangan dengan data yang sudah ada",
+        )
+    except Exception:
+        db.rollback()
+        raise
+
+    return student
+
+
+@router.get(
+    "/students",
+    response_model=list[EducationStudentResponse],
+)
+def list_students(
+    school_id: int | None = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_education_permission("education:schools:read")
+    ),
+):
+    tenant_id = get_tenant_id(current_user)
+
+    query = db.query(EducationStudent).filter(
+        EducationStudent.tenant_id == tenant_id
+    )
+
+    if school_id is not None:
+        get_school_for_tenant(db, school_id, tenant_id)
+        query = query.filter(
+            EducationStudent.school_id == school_id
+        )
+
+    return query.order_by(EducationStudent.id.desc()).all()
+
+
+@router.get(
+    "/students/{student_id}",
+    response_model=EducationStudentResponse,
+)
+def get_student(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_education_permission("education:schools:read")
+    ),
+):
+    tenant_id = get_tenant_id(current_user)
+
+    return get_student_for_tenant(db, student_id, tenant_id)
+
+
+@router.patch(
+    "/students/{student_id}",
+    response_model=EducationStudentResponse,
+)
+def update_student(
+    student_id: int,
+    payload: EducationStudentUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_education_permission("education:schools:update")
+    ),
+):
+    tenant_id = get_tenant_id(current_user)
+    student = get_student_for_tenant(db, student_id, tenant_id)
+
+    changes = payload.model_dump(exclude_unset=True)
+
+    if changes.get("student_number") is not None:
+        duplicate = (
+            db.query(EducationStudent)
+            .filter(
+                EducationStudent.tenant_id == tenant_id,
+                EducationStudent.student_number
+                == changes["student_number"],
+                EducationStudent.id != student_id,
+            )
+            .first()
+        )
+
+        if duplicate:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Nomor siswa sudah terdaftar pada tenant ini",
+            )
+
+    # school_id and tenant_id cannot be changed through this schema.
+    for key, value in changes.items():
+        setattr(student, key, value)
+
+    try:
+        db.commit()
+        db.refresh(student)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Perubahan siswa bertentangan dengan data yang sudah ada",
+        )
+    except Exception:
+        db.rollback()
+        raise
+
+    return student
+
+
+@router.delete(
+    "/students/{student_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_student(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_education_permission("education:schools:delete")
+    ),
+):
+    tenant_id = get_tenant_id(current_user)
+    student = get_student_for_tenant(db, student_id, tenant_id)
+
+    try:
+        db.delete(student)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Siswa tidak dapat dihapus karena masih memiliki data terkait",
+        )
     except Exception:
         db.rollback()
         raise
