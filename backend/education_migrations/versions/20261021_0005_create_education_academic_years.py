@@ -2,7 +2,7 @@
 """Create education academic years.
 
 Revision ID: 20261021_0005
-Revises: REPLACE_WITH_ACTUAL_0004_REVISION_ID
+Revises: 20261021_0004
 Create Date: 2026-10-21
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 revision = "20261021_0005"
-down_revision = "REPLACE_WITH_ACTUAL_0004_REVISION_ID"
+down_revision = "20261021_0004"
 branch_labels = None
 depends_on = None
 
