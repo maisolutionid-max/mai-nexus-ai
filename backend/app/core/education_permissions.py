@@ -1,3 +1,4 @@
+
 """
 MAI Nexus AI Education
 Role-Based Access Control (RBAC)
@@ -15,18 +16,33 @@ from app.core.education_auth import get_education_current_user
 # Admin aplikasi tidak otomatis menjadi admin setiap sekolah.
 EDUCATION_ROLE_PERMISSIONS = {
     "ADMIN": {
+        # School management
         "education:schools:read",
         "education:schools:create",
         "education:schools:update",
         "education:schools:delete",
+
+        # Student management
+        "education:students:read",
+        "education:students:create",
+        "education:students:update",
+        "education:students:delete",
     },
     "MANAGER": {
+        # School management
         "education:schools:read",
         "education:schools:create",
         "education:schools:update",
+
+        # Student management
+        "education:students:read",
+        "education:students:create",
+        "education:students:update",
     },
     "STAFF": {
+        # Read-only access
         "education:schools:read",
+        "education:students:read",
     },
     "CUSTOMER": set(),
     "CASHIER": set(),
@@ -37,7 +53,7 @@ def has_education_permission(
     role: str,
     permission: str,
 ) -> bool:
-    """Periksa apakah role memiliki izin Education."""
+    """Check whether a role has the requested Education permission."""
     normalized_role = str(role).upper()
 
     permissions = EDUCATION_ROLE_PERMISSIONS.get(
@@ -51,7 +67,7 @@ def has_education_permission(
 def require_education_permission(
     permission: str,
 ) -> Callable:
-    """Buat dependency untuk melindungi endpoint Education."""
+    """Create a dependency that protects an Education endpoint."""
 
     def permission_checker(
         current_user: dict = Depends(
@@ -69,4 +85,3 @@ def require_education_permission(
         return current_user
 
     return permission_checker
-      
