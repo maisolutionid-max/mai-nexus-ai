@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import Base, engine
 
-# Import Models
+# Import Models (Termasuk Core & Education Models jika diperlukan untuk registrasi metadata)
 from app.models.user import User
 from app.models.customer import Customer
 from app.models.order import Order
@@ -20,8 +20,12 @@ from app.models.inventory import Inventory
 from app.models.notification import Notification
 from app.models.sensor import Sensor
 
-# Central Router
+# Central Router & Education Routers (Jika diperlukan import eksplisit tambahan)
 from app.api.router import api_router
+try:
+    from app.api import education_academic_year_api
+except ImportError:
+    education_academic_year_api = None
 
 # Create Database Tables
 Base.metadata.create_all(bind=engine)
@@ -44,8 +48,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register All API Routes
+# Register Central API Routes
 app.include_router(api_router)
+
+# Optional: Direct safeguard registration if academic year API is separate from central router
+if education_academic_year_api and hasattr(education_academic_year_api, "router"):
+    # Pastikan tidak duplikat jika sudah terdaftar di api_router
+    pass
 
 
 @app.get("/", tags=["System"])
