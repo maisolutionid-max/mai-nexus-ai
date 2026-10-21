@@ -46,4 +46,3 @@ def downgrade():
     op.drop_index(op.f('ix_education_student_classes_school_id'), table_name='education_student_classes')
     op.drop_index(op.f('ix_education_student_classes_id'), table_name='education_student_classes')
     op.drop_table('education_student_classes')
-  
