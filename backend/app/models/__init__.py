@@ -3,6 +3,7 @@ from .tenant import Tenant
 from .education_school import EducationSchool
 from .education_tenant_user import EducationTenantUser
 from .education_student import EducationStudent
+from .education_academic_year import EducationAcademicYear
 from .user import User
 from .customer import Customer
 from .order import Order
@@ -24,4 +25,5 @@ __all__ = [
     "EducationSchool",
     "EducationTenantUser",
     "EducationStudent",
+    "EducationAcademicYear",
 ]
