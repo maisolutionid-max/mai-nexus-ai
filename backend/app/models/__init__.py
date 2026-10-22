@@ -15,6 +15,7 @@ from .sensor import Sensor
 from app.models.education_teacher import EducationTeacher
 from app.models.education_subject import EducationSubject
 from app.models.education_teacher_assignment import EducationTeacherAssignment
+from app.models.education_attendance import EducationAttendance
 
 
 __all__ = [
@@ -34,4 +35,5 @@ __all__ = [
     "EducationTeacher",
     "EducationSubject",
     "EducationTeacherAssignment",
+    "EducationAttendance",
 ]
