@@ -14,6 +14,7 @@ from .notification import Notification
 from .sensor import Sensor
 from app.models.education_teacher import EducationTeacher
 from app.models.education_subject import EducationSubject
+from app.models.education_teacher_assignment import EducationTeacherAssignment
 
 
 __all__ = [
@@ -32,4 +33,5 @@ __all__ = [
     "EducationClass",
     "EducationTeacher",
     "EducationSubject",
+    "EducationTeacherAssignment",
 ]
