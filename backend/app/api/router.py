@@ -11,6 +11,7 @@ Author : MAI Solution Hub
 from fastapi import APIRouter
 
 # Import semua router
+from app.api import report_card
 from app.api import grading
 from app.api.ai_api import router as ai_router
 from app.api.auth_api import router as auth_router
@@ -80,3 +81,5 @@ api_router.include_router(education_subject_router)
 api_router.include_router(education_teacher_assignment_router)
 api_router.include_router(education_attendance_router)
 api_router.include_router(grading.router)  # Modul Penilaian & Nilai Siswa
+api_router.include_router(report_card.router)
+
