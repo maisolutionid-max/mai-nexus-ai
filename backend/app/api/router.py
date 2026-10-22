@@ -7,38 +7,40 @@ main.py hanya perlu memanggil api_router.
 
 Author : MAI Solution Hub
 """
-from app.api import grading
-
-# Di dalam file router utama, daftarkan:
-api_router.include_router(grading.router)
 
 from fastapi import APIRouter
+
+# Import semua router
 from app.api import grading
-
-
+from app.api.ai_api import router as ai_router
 from app.api.auth_api import router as auth_router
 from app.api.customer_api import router as customer_router
+from app.api.dashboard_api import router as dashboard_router
+from app.api.education_academic_year_api import (
+    router as education_academic_year_router,
+)
+from app.api.education_api import router as education_router
+from app.api.education_attendance_api import router as education_attendance_router
+from app.api.education_class_api import router as education_class_router
+from app.api.education_student_class_api import (
+    router as education_student_class_router,
+)
+from app.api.education_subject_api import router as education_subject_router
+from app.api.education_teacher_assignment_api import (
+    router as education_teacher_assignment_router,
+)
+from app.api.education_teacher_api import router as education_teacher_router
+from app.api.health_api import router as health_router
+from app.api.inventory_api import router as inventory_router
+from app.api.iot_api import router as iot_router
+from app.api.notification_api import router as notification_router
 from app.api.order_api import router as order_router
 from app.api.payment_api import router as payment_router
-from app.api.dashboard_api import router as dashboard_router
-from app.api.inventory_api import router as inventory_router
 from app.api.product_api import router as product_router
-from app.api.transaction_api import router as transaction_router
-from app.api.notification_api import router as notification_router
 from app.api.report_api import router as report_router
-from app.api.ai_api import router as ai_router
-from app.api.iot_api import router as iot_router
-from app.api.health_api import router as health_router
-from app.api.education_api import router as education_router
-from app.api.education_academic_year_api import router as education_academic_year_router
-from app.api.education_class_api import router as education_class_router
-from app.api.education_student_class_api import router as education_student_class_router
-from app.api.education_teacher_api import router as education_teacher_router
-from app.api.education_subject_api import router as education_subject_router
-from app.api.education_teacher_assignment_api import router as education_teacher_assignment_router
-from app.api.education_attendance_api import router as education_attendance_router
+from app.api.transaction_api import router as transaction_router
 
-
+# Inisialisasi Central API Router
 api_router = APIRouter()
 
 # Authentication
@@ -51,7 +53,6 @@ api_router.include_router(payment_router)
 api_router.include_router(product_router)
 api_router.include_router(inventory_router)
 api_router.include_router(transaction_router)
-api_router.include_router(grading.router)
 
 # Dashboard & Reporting
 api_router.include_router(dashboard_router)
@@ -78,4 +79,4 @@ api_router.include_router(education_teacher_router)
 api_router.include_router(education_subject_router)
 api_router.include_router(education_teacher_assignment_router)
 api_router.include_router(education_attendance_router)
-
+api_router.include_router(grading.router)  # Modul Penilaian & Nilai Siswa
