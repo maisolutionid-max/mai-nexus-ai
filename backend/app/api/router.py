@@ -7,8 +7,14 @@ main.py hanya perlu memanggil api_router.
 
 Author : MAI Solution Hub
 """
+from app.api import grading
+
+# Di dalam file router utama, daftarkan:
+api_router.include_router(grading.router)
 
 from fastapi import APIRouter
+from app.api import grading
+
 
 from app.api.auth_api import router as auth_router
 from app.api.customer_api import router as customer_router
@@ -45,6 +51,7 @@ api_router.include_router(payment_router)
 api_router.include_router(product_router)
 api_router.include_router(inventory_router)
 api_router.include_router(transaction_router)
+api_router.include_router(grading.router)
 
 # Dashboard & Reporting
 api_router.include_router(dashboard_router)
