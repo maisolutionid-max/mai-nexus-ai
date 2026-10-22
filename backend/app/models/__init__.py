@@ -13,6 +13,7 @@ from .inventory import Inventory
 from .notification import Notification
 from .sensor import Sensor
 from app.models.education_teacher import EducationTeacher
+from app.models.education_subject import EducationSubject
 
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "EducationAcademicYear",
     "EducationClass",
     "EducationTeacher",
+    "EducationSubject",
 ]
