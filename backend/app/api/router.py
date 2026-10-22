@@ -29,6 +29,7 @@ from app.api.education_class_api import router as education_class_router
 from app.api.education_student_class_api import router as education_student_class_router
 from app.api.education_teacher_api import router as education_teacher_router
 from app.api.education_subject_api import router as education_subject_router
+from app.api.education_teacher_assignment_api import router as education_teacher_assignment_router
 
 
 
@@ -68,3 +69,4 @@ api_router.include_router(education_class_router)
 api_router.include_router(education_student_class_router)
 api_router.include_router(education_teacher_router)
 api_router.include_router(education_subject_router)
+api_router.include_router(education_teacher_assignment_router)
