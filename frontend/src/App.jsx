@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./styles/global.css";
 import DataManager from "./components/DataManager";
 
@@ -13,7 +13,6 @@ const menuItems = [
   { id: "settings", label: "Pengaturan", icon: "⚙" },
 ];
 
-// Konfigurasi Kolom Form & Tabel Dinamis untuk Setiap Modul
 const moduleConfigs = {
   schools: {
     title: "Sekolah",
@@ -65,16 +64,42 @@ const moduleConfigs = {
   },
 };
 
-const stats = [
-  { label: "Total Siswa", value: "—", note: "Data dari API", icon: "♙" },
-  { label: "Total Guru", value: "—", note: "Data dari API", icon: "♧" },
-  { label: "Total Kelas", value: "—", note: "Data dari API", icon: "▦" },
-  { label: "Tahun Ajaran", value: "—", note: "Data dari API", icon: "▤" },
-];
-
 export default function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // State untuk menghitung jumlah data secara dinamis dari localStorage
+  const [counts, setCounts] = useState({
+    students: 0,
+    teachers: 0,
+    classes: 0,
+    academicYears: 0,
+  });
+
+  useEffect(() => {
+    try {
+      const getLen = (key) => {
+        const d = localStorage.getItem(`mai_nexus_${key}`);
+        return d ? JSON.parse(d).length : 0;
+      };
+
+      setCounts({
+        students: getLen("siswa"),
+        teachers: getLen("guru"),
+        classes: getLen("kelas"),
+        academicYears: getLen("tahun_ajaran"),
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }, [activePage]);
+
+  const stats = [
+    { label: "Total Siswa", value: counts.students, note: "Data Lokal Aktif", icon: "♙" },
+    { label: "Total Guru", value: counts.teachers, note: "Data Lokal Aktif", icon: "♧" },
+    { label: "Total Kelas", value: counts.classes, note: "Data Lokal Aktif", icon: "▦" },
+    { label: "Tahun Ajaran", value: counts.academicYears, note: "Data Lokal Aktif", icon: "▤" },
+  ];
 
   const activeLabel =
     menuItems.find((item) => item.id === activePage)?.label || "Dashboard";
@@ -214,10 +239,9 @@ export default function App() {
 
                   <div className="empty-state">
                     <div className="empty-icon">▤</div>
-                    <strong>Menyiapkan data akademik</strong>
+                    <strong>Sistem Aktif & Siap Digunakan</strong>
                     <p>
-                      Statistik akan ditampilkan setelah frontend terhubung
-                      dengan API backend.
+                      Data administrasi yang Anda input atau unggah dari Excel akan otomatis direkap di sistem lokal.
                     </p>
                   </div>
                 </article>
@@ -247,7 +271,6 @@ export default function App() {
               </section>
             </>
           ) : moduleConfigs[activePage] ? (
-            /* Komponen Dinamis untuk Semua Menu Data */
             <DataManager
               key={activePage}
               title={moduleConfigs[activePage].title}
