@@ -26,30 +26,7 @@ const excelHeaders = [
 ];
 
 const styles = {
-  page: {
-    display: "grid",
-    gap: 20,
-    color: "var(--text-primary, #172033)",
-  },
-  tabs: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tab: {
-    padding: "10px 16px",
-    border: "1px solid #d9dfeb",
-    borderRadius: 10,
-    background: "#fff",
-    color: "#172033",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  activeTab: {
-    background: "#14213d",
-    color: "#fff",
-    borderColor: "#14213d",
-  },
+  page: { display: "grid", gap: 20, color: "#172033" },
   panel: {
     background: "#fff",
     border: "1px solid #e1e6ef",
@@ -57,20 +34,24 @@ const styles = {
     padding: 20,
     minWidth: 0,
   },
+  tabs: { display: "flex", flexWrap: "wrap", gap: 8 },
+  tab: {
+    padding: "10px 14px",
+    border: "1px solid #ccd4e1",
+    borderRadius: 8,
+    background: "#fff",
+    color: "#172033",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+  activeTab: { background: "#14213d", color: "#fff" },
   form: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: 16,
   },
-  field: {
-    display: "grid",
-    gap: 7,
-    minWidth: 0,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 600,
-  },
+  field: { display: "grid", gap: 7, minWidth: 0 },
+  label: { fontSize: 14, fontWeight: 600 },
   input: {
     width: "100%",
     minWidth: 0,
@@ -99,22 +80,24 @@ const styles = {
     color: "#172033",
     cursor: "pointer",
   },
-  tableWrap: {
-    width: "100%",
-    overflowX: "auto",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    minWidth: 520,
-  },
+  tableWrap: { width: "100%", overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "collapse", minWidth: 500 },
   cell: {
-    padding: "12px 10px",
+    padding: "11px 10px",
     textAlign: "left",
     borderBottom: "1px solid #edf0f5",
     fontSize: 14,
   },
 };
+
+function Field({ label, children }) {
+  return (
+    <label style={styles.field}>
+      <span style={styles.label}>{label}</span>
+      {children}
+    </label>
+  );
+}
 
 function getErrorMessage(error) {
   const detail = error?.response?.data?.detail;
@@ -130,7 +113,7 @@ function getErrorMessage(error) {
   }
 
   if (!error?.response) {
-    return "Backend belum dapat dihubungi. Periksa koneksi dan URL API.";
+    return "Backend tidak dapat dihubungi. Periksa URL API dan koneksi.";
   }
 
   if (error.response.status === 401) {
@@ -138,10 +121,10 @@ function getErrorMessage(error) {
   }
 
   if (error.response.status === 403) {
-    return "Akun belum memiliki izin untuk mengakses data Education.";
+    return "Akun tidak memiliki izin untuk tindakan ini.";
   }
 
-  return `Permintaan gagal (${error.response.status}). Periksa data dan coba kembali.`;
+  return `Permintaan gagal (${error.response.status}).`;
 }
 
 function normalizeList(data) {
@@ -149,15 +132,6 @@ function normalizeList(data) {
   if (Array.isArray(data?.items)) return data.items;
   if (Array.isArray(data?.data)) return data.data;
   return [];
-}
-
-function Field({ label, children }) {
-  return (
-    <label style={styles.field}>
-      <span style={styles.label}>{label}</span>
-      {children}
-    </label>
-  );
 }
 
 function downloadBlob(blob, filename) {
@@ -181,17 +155,53 @@ function downloadCsvTemplate() {
 
   const csv = rows
     .map((row) =>
-      row
-        .map((value) => `"${String(value).replace(/"/g, '""')}"`)
-        .join(",")
+      row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")
     )
     .join("\r\n");
 
-  const blob = new Blob(["\uFEFF" + csv], {
-    type: "text/csv;charset=utf-8;",
-  });
+  downloadBlob(
+    new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }),
+    "template_data_siswa.csv"
+  );
+}
 
-  downloadBlob(blob, "template_data_siswa.csv");
+function DataTable({ columns, rows, emptyMessage }) {
+  return (
+    <div style={styles.tableWrap}>
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th key={column.label} style={styles.cell}>
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td style={styles.cell} colSpan={columns.length}>
+                {emptyMessage}
+              </td>
+            </tr>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={row.id ?? `${row.row ?? "row"}-${index}`}>
+                {columns.map((column) => (
+                  <td key={column.label} style={styles.cell}>
+                    {column.render
+                      ? column.render(row)
+                      : row[column.key] ?? "—"}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export default function EducationData() {
@@ -316,7 +326,7 @@ export default function EducationData() {
     } catch (err) {
       setError(
         getErrorMessage(err) +
-          " Jika endpoint template belum tersedia, gunakan template CSV sementara."
+          " Kamu masih bisa mengunduh template CSV sementara."
       );
     }
   }
@@ -330,7 +340,7 @@ export default function EducationData() {
     }
 
     if (!excelFile.name.toLowerCase().endsWith(".xlsx")) {
-      setError("Pilih file dengan format .xlsx.");
+      setError("File harus menggunakan format .xlsx.");
       return;
     }
 
@@ -354,10 +364,11 @@ export default function EducationData() {
         { timeout: 60000 }
       );
 
-      setImportResults(response.data);
+      const result = response.data;
+      setImportResults(result);
       setNotice(
-        `Impor selesai: ${response.data.imported ?? 0} berhasil, ` +
-          `${response.data.failed ?? 0} gagal.`
+        `Impor selesai: ${result.imported ?? 0} berhasil, ` +
+          `${result.failed ?? 0} gagal.`
       );
       setExcelFile(null);
 
@@ -372,14 +383,44 @@ export default function EducationData() {
     }
   }
 
+  const schoolColumns = [
+    { label: "Nama sekolah", key: "name" },
+    { label: "NPSN", key: "npsn" },
+    { label: "Jenjang", key: "school_level" },
+    {
+      label: "Status",
+      render: (row) => (row.is_active ? "Aktif" : "Tidak aktif"),
+    },
+  ];
+
+  const studentColumns = [
+    { label: "Nomor siswa", key: "student_number" },
+    { label: "Nama lengkap", key: "full_name" },
+    { label: "ID sekolah", key: "school_id" },
+    {
+      label: "Status",
+      render: (row) => (row.is_active ? "Aktif" : "Tidak aktif"),
+    },
+  ];
+
+  const resultColumns = [
+    { label: "Baris Excel", key: "row" },
+    { label: "Nomor siswa", key: "student_number" },
+    {
+      label: "Status",
+      render: (row) => (row.status === "imported" ? "Berhasil" : "Gagal"),
+    },
+    { label: "Keterangan", key: "message" },
+  ];
+
   return (
     <div style={styles.page}>
-      <div>
+      <header>
         <h2 style={{ margin: "0 0 8px" }}>Data Education</h2>
         <p style={{ margin: 0, color: "#667085", lineHeight: 1.6 }}>
-          Kelola data sekolah dan siswa melalui MAI Nexus AI Education.
+          Kelola data sekolah dan siswa MAI Nexus AI Education.
         </p>
-      </div>
+      </header>
 
       <div style={styles.tabs}>
         <button
@@ -461,7 +502,9 @@ export default function EducationData() {
                 <input
                   style={styles.input}
                   value={schoolForm.name}
-                  onChange={(event) => updateSchool("name", event.target.value)}
+                  onChange={(event) =>
+                    updateSchool("name", event.target.value)
+                  }
                   maxLength={200}
                   required
                 />
@@ -471,7 +514,9 @@ export default function EducationData() {
                 <input
                   style={styles.input}
                   value={schoolForm.npsn}
-                  onChange={(event) => updateSchool("npsn", event.target.value)}
+                  onChange={(event) =>
+                    updateSchool("npsn", event.target.value)
+                  }
                   maxLength={20}
                 />
               </Field>
@@ -485,13 +530,21 @@ export default function EducationData() {
                   }
                   required
                 >
-                  {["PAUD", "TK", "SD", "SMP", "SMA", "SMK", "SLB", "MA", "Lainnya"].map(
-                    (level) => (
-                      <option key={level} value={level}>
-                        {level}
-                      </option>
-                    )
-                  )}
+                  {[
+                    "PAUD",
+                    "TK",
+                    "SD",
+                    "SMP",
+                    "SMA",
+                    "SMK",
+                    "SLB",
+                    "MA",
+                    "Lainnya",
+                  ].map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -537,7 +590,11 @@ export default function EducationData() {
               </Field>
 
               <div style={{ gridColumn: "1 / -1", textAlign: "right" }}>
-                <button style={styles.button} disabled={saving} type="submit">
+                <button
+                  type="submit"
+                  style={styles.button}
+                  disabled={saving}
+                >
                   {saving ? "Menyimpan..." : "Simpan Sekolah"}
                 </button>
               </div>
@@ -546,41 +603,14 @@ export default function EducationData() {
 
           <section style={styles.panel}>
             <h3 style={{ marginTop: 0 }}>Daftar Sekolah</h3>
-
             {loading ? (
               <p>Memuat data sekolah...</p>
-            ) : schools.length === 0 ? (
-              <p style={{ color: "#667085" }}>
-                Belum ada data sekolah, atau backend belum terhubung.
-              </p>
             ) : (
-              <div style={styles.tableWrap}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      {["Nama sekolah", "NPSN", "Jenjang", "Status"].map(
-                        (heading) => (
-                          <th key={heading} style={styles.cell}>
-                            {heading}
-                          </th>
-                        )
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {schools.map((school) => (
-                      <tr key={school.id}>
-                        <td style={styles.cell}>{school.name}</td>
-                        <td style={styles.cell}>{school.npsn || "—"}</td>
-                        <td style={styles.cell}>{school.school_level}</td>
-                        <td style={styles.cell}>
-                          {school.is_active ? "Aktif" : "Tidak aktif"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                columns={schoolColumns}
+                rows={schools}
+                emptyMessage="Belum ada data sekolah atau backend belum terhubung."
+              />
             )}
           </section>
         </>
@@ -651,7 +681,11 @@ export default function EducationData() {
                 </Field>
 
                 <div style={{ gridColumn: "1 / -1", textAlign: "right" }}>
-                  <button style={styles.button} disabled={saving} type="submit">
+                  <button
+                    type="submit"
+                    style={styles.button}
+                    disabled={saving}
+                  >
                     {saving ? "Menyimpan..." : "Simpan Siswa"}
                   </button>
                 </div>
@@ -663,111 +697,31 @@ export default function EducationData() {
             <h3 style={{ marginTop: 0 }}>Impor Siswa dari Excel</h3>
 
             <p style={{ color: "#667085", lineHeight: 1.6 }}>
-              Unduh template Excel, isi data siswa, kemudian unggah kembali.
-              Maksimal 500 baris data dan ukuran file 5 MB.
-            </p>
-                <button
-                  type="submit"
-                  style={styles.button}
-                  disabled={importing || !excelFile}
-                >
-                  {importing ? "Mengimpor..." : "Unggah dan Impor"}
-                </button>
-              </div>
-            </form>
-
-            <p style={{ fontSize: 13, color: "#667085", lineHeight: 1.6 }}>
-              Kolom: student_number, full_name, school_id, is_active.
-              Gunakan ID sekolah yang terdaftar pada akun/tenant terkait.
+              Isi template dengan data siswa. File Excel dibatasi 5 MB dan
+              maksimal 500 baris data sesuai batas backend.
             </p>
 
-            {importResults && (
-              <div style={{ marginTop: 20 }}>
-                <h4>Hasil Impor</h4>
-                <p>
-                  Total diproses: {importResults.total_processed ?? 0} |
-                  Berhasil: {importResults.imported ?? 0} |
-                  Gagal: {importResults.failed ?? 0}
-                </p>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <button
+                type="button"
+                style={styles.secondaryButton}
+                onClick={handleDownloadTemplate}
+                disabled={importing}
+              >
+                Unduh Template Excel
+              </button>
 
-                <div style={styles.tableWrap}>
-                  <table style={styles.table}>
-                    <thead>
-                      <tr>
-                        {[
-                          "Baris Excel",
-                          "Nomor siswa",
-                          "Status",
-                          "Keterangan",
-                        ].map((heading) => (
-                          <th key={heading} style={styles.cell}>
-                            {heading}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(importResults.results || []).map((item, index) => (
-                        <tr key={`${item.row}-${index}`}>
-                          <td style={styles.cell}>{item.row}</td>
-                          <td style={styles.cell}>
-                            {item.student_number || "—"}
-                          </td>
-                          <td style={styles.cell}>
-                            {item.status === "imported" ? "Berhasil" : "Gagal"}
-                          </td>
-                          <td style={styles.cell}>{item.message}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section style={styles.panel}>
-            <h3 style={{ marginTop: 0 }}>Daftar Siswa</h3>
-
-            {loading ? (
-              <p>Memuat data siswa...</p>
-            ) : students.length === 0 ? (
-              <p style={{ color: "#667085" }}>Belum ada data siswa.</p>
-            ) : (
-              <div style={styles.tableWrap}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      {[
-                        "Nomor siswa",
-                        "Nama lengkap",
-                        "ID sekolah",
-                        "Status",
-                      ].map((heading) => (
-                        <th key={heading} style={styles.cell}>
-                          {heading}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student) => (
-                      <tr key={student.id}>
-                        <td style={styles.cell}>{student.student_number}</td>
-                        <td style={styles.cell}>{student.full_name}</td>
-                        <td style={styles.cell}>{student.school_id}</td>
-                        <td style={styles.cell}>
-                          {student.is_active ? "Aktif" : "Tidak aktif"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </>
-      )}
-    </div>
-  );
-}
+              <button
+                type="button"
+                style={styles.secondaryButton}
+                onClick={downloadCsvTemplate}
+                disabled={importing}
+              >
+                Unduh Templ
