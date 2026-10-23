@@ -11,6 +11,8 @@ Author : MAI Solution Hub
 from fastapi import APIRouter
 
 # Import semua router
+
+
 from app.api import ai_copilot, user_role
 from app.api import announcement
 from app.api import billing
@@ -28,6 +30,9 @@ from app.api.education_attendance_api import router as education_attendance_rout
 from app.api.education_class_api import router as education_class_router
 from app.api.education_student_class_api import (
     router as education_student_class_router,
+)
+from app.api.education_import_api import (
+    router as education_import_router,
 )
 from app.api.education_subject_api import router as education_subject_router
 from app.api.education_teacher_assignment_api import (
@@ -76,6 +81,7 @@ api_router.include_router(health_router)
 
 # Education Services
 api_router.include_router(education_router)
+api_router.include_router(education_import_router)
 api_router.include_router(education_academic_year_router)
 api_router.include_router(education_class_router)
 api_router.include_router(education_student_class_router)
