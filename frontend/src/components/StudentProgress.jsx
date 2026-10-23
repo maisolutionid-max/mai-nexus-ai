@@ -3,13 +3,30 @@ import React, { useState, useEffect } from "react";
 export default function StudentProgress() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [evalNotes, setEvalNotes] = useState({
-    akademik: "Sangat aktif dalam diskusi kelas dan memahami konsep dasar dengan baik.",
-    perilaku: "Disiplin, sopan, dan memiliki kepemimpinan yang baik di kelompoknya.",
-    catatanAI: "Siswa menunjukkan minat tinggi pada logika. Disarankan memberikan latihan pengayaan soal-soal HOTS untuk mengoptimalkan potensinya.",
-  });
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Nilai Dummy untuk Demo Progres
+  // Template Evaluasi AI
+  const aiAnalysesList = [
+    {
+      akademik: "Memiliki pemahaman konsep logika yang sangat kuat dan konsisten dalam tugas harian.",
+      perilaku: "Sangat disiplin, aktif memimpin diskusi kelompok, dan santun kepada guru.",
+      catatanAI: "Siswa menunjukkan potensi kepemimpinan dan analitis yang menonjol. Disarankan untuk dilibatkan dalam kompetisi Sains/Matematika atau program pengayaan HOTS.",
+    },
+    {
+      akademik: "Capaian nilai stabil di atas rata-rata kelas, namun perlu sedikit dorongan pada pemahaman soal cerita.",
+      perilaku: "Kreatif, kooperatif dalam tim, dan selalu menyelesaikan tugas tepat waktu.",
+      catatanAI: "Siswa merespons pembelajaran visual dengan sangat baik. Direkomendasikan media pembelajaran berbasis proyek (PBL) untuk mempertahankan minat belajarnya.",
+    },
+    {
+      akademik: "Menunjukkan peningkatan signifikan pada pemahaman literasi dan bahasa.",
+      perilaku: "Sopan, tekun, dan memiliki rasa empati yang tinggi terhadap sesama teman kelas.",
+      catatanAI: "Perkembangan emosional dan akademiknya sangat seimbang. Disarankan orang tua memberikan apresiasi atas konsistensi usahanya di rumah.",
+    },
+  ];
+
+  const [evalNotes, setEvalNotes] = useState(aiAnalysesList[0]);
+
+  // Nilai Dummy
   const [grades, setGrades] = useState([
     { mapel: "Matematika", nilai: 88, predikat: "A" },
     { mapel: "Bahasa Indonesia", nilai: 90, predikat: "A" },
@@ -26,7 +43,6 @@ export default function StudentProgress() {
   });
 
   useEffect(() => {
-    // Ambil data siswa dari LocalStorage
     const savedSiswa = localStorage.getItem("mai_nexus_siswa");
     if (savedSiswa) {
       try {
@@ -40,7 +56,6 @@ export default function StudentProgress() {
       }
     }
 
-    // Ambil Profil Sekolah
     const savedProfile = localStorage.getItem("mai_nexus_settings_profile");
     if (savedProfile) {
       try {
@@ -57,6 +72,16 @@ export default function StudentProgress() {
       }
     }
   }, []);
+
+  // Fungsi Simulasi Generate AI
+  const handleGenerateAI = () => {
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * aiAnalysesList.length);
+      setEvalNotes(aiAnalysesList[randomIndex]);
+      setIsAnalyzing(false);
+    }, 1200);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -84,7 +109,7 @@ export default function StudentProgress() {
         .print-header, .print-footer { display: none; }
       `}</style>
 
-      {/* Header & Aksi (Disembunyikan saat Print) */}
+      {/* Header & Aksi */}
       <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <div>
           <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, color: "#1e293b" }}>
@@ -95,11 +120,13 @@ export default function StudentProgress() {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          {/* Selector Siswa */}
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
           {students.length > 0 && (
             <select
-              onChange={(e) => setSelectedStudent(students[e.target.value])}
+              onChange={(e) => {
+                setSelectedStudent(students[e.target.value]);
+                handleGenerateAI();
+              }}
               style={{ padding: "8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
             >
               {students.map((s, idx) => (
@@ -111,6 +138,14 @@ export default function StudentProgress() {
           )}
 
           <button
+            onClick={handleGenerateAI}
+            disabled={isAnalyzing}
+            style={{ backgroundColor: "#2563eb", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", fontWeight: "600", fontSize: "12px", cursor: "pointer" }}
+          >
+            {isAnalyzing ? "⚡ Menganalisis..." : "✨ Generate Analisis AI"}
+          </button>
+
+          <button
             onClick={handlePrint}
             style={{ backgroundColor: "#475569", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", fontWeight: "600", fontSize: "12px", cursor: "pointer" }}
           >
@@ -119,7 +154,7 @@ export default function StudentProgress() {
         </div>
       </div>
 
-      {/* Area Yang Dicetak (Printable Area) */}
+      {/* Printable Area */}
       <div className="printable-area" style={{ backgroundColor: "#ffffff", padding: "20px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
         
         {/* Kop Surat Sekolah */}
@@ -186,14 +221,24 @@ export default function StudentProgress() {
 
         {/* Catatan Evaluasi & Rekomendasi AI */}
         <h4 style={{ margin: "16px 0 8px 0", fontSize: "14px", color: "#1e293b" }}>3. Catatan Perkembangan & Analisis AI</h4>
-        <div style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "12px", fontSize: "12px", lineHeight: "1.6" }}>
-          <p style={{ margin: "0 0 8px 0" }}><strong>• Perkembangan Akademik & Sikap:</strong> {evalNotes.akademik} {evalNotes.perilaku}</p>
-          <p style={{ margin: 0, color: "#1d4ed8", fontStyle: "italic" }}>
-            <strong>🤖 Rekomendasi MAI Nexus AI:</strong> {evalNotes.catatanAI}
-          </p>
+        <div style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "12px", fontSize: "12px", lineHeight: "1.6", backgroundColor: isAnalyzing ? "#f1f5f9" : "#fff" }}>
+          {isAnalyzing ? (
+            <p style={{ margin: 0, fontStyle: "italic", color: "#2563eb" }}>
+              ⚡ AI sedang menganalisis rekap nilai dan kehadiran siswa...
+            </p>
+          ) : (
+            <>
+              <p style={{ margin: "0 0 8px 0" }}>
+                <strong>• Catatan Akademik & Sikap:</strong> {evalNotes.akademik} {evalNotes.perilaku}
+              </p>
+              <p style={{ margin: 0, color: "#1d4ed8", fontStyle: "italic" }}>
+                <strong>🤖 Rekomendasi MAI Nexus AI:</strong> {evalNotes.catatanAI}
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Tanda Tangan Orang Tua & Wali Kelas (Muncul saat Print) */}
+        {/* Tanda Tangan */}
         <div className="print-footer">
           <div style={{ textAlign: "center", width: "200px", fontSize: "12px" }}>
             <p style={{ margin: "0 0 60px 0" }}>Mengetahui,<br />Orang Tua / Wali Siswa</p>
@@ -210,4 +255,5 @@ export default function StudentProgress() {
       </div>
     </div>
   );
-}
+      }
+          
