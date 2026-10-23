@@ -12,3 +12,4 @@ alembic
 httpx
 requests
 openai
+openpyxl
