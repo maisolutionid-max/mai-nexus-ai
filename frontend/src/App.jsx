@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./styles/global.css";
 import DataManager from "./components/DataManager";
+import SettingsPage from "./components/SettingsPage";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "⌂" },
@@ -270,6 +271,8 @@ export default function App() {
                 </article>
               </section>
             </>
+          ) : activePage === "settings" ? (
+            <SettingsPage />
           ) : moduleConfigs[activePage] ? (
             <DataManager
               key={activePage}
