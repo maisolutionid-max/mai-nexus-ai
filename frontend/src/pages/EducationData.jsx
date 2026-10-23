@@ -18,6 +18,13 @@ const initialStudent = {
   is_active: true,
 };
 
+const excelHeaders = [
+  "student_number",
+  "full_name",
+  "school_id",
+  "is_active",
+];
+
 const styles = {
   page: {
     display: "grid",
@@ -34,6 +41,7 @@ const styles = {
     border: "1px solid #d9dfeb",
     borderRadius: 10,
     background: "#fff",
+    color: "#172033",
     cursor: "pointer",
     fontWeight: 600,
   },
@@ -47,6 +55,7 @@ const styles = {
     border: "1px solid #e1e6ef",
     borderRadius: 14,
     padding: 20,
+    minWidth: 0,
   },
   form: {
     display: "grid",
@@ -56,6 +65,7 @@ const styles = {
   field: {
     display: "grid",
     gap: 7,
+    minWidth: 0,
   },
   label: {
     fontSize: 14,
@@ -115,19 +125,30 @@ function getErrorMessage(error) {
 
   if (typeof detail === "string") return detail;
 
+  if (detail && typeof detail === "object") {
+    return detail.message || JSON.stringify(detail);
+  }
+
   if (!error?.response) {
-    return "Backend belum dapat dihubungi. Periksa URL API dan koneksi backend.";
+    return "Backend belum dapat dihubungi. Periksa koneksi dan URL API.";
   }
 
   if (error.response.status === 401) {
-    return "Sesi login tidak tersedia atau sudah berakhir. Silakan login kembali.";
+    return "Sesi login tidak tersedia atau sudah berakhir.";
   }
 
   if (error.response.status === 403) {
-    return "Akun ini belum memiliki izin untuk mengakses data Education.";
+    return "Akun belum memiliki izin untuk mengakses data Education.";
   }
 
-  return "Permintaan gagal. Periksa data dan coba kembali.";
+  return `Permintaan gagal (${error.response.status}). Periksa data dan coba kembali.`;
+}
+
+function normalizeList(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
 }
 
 function Field({ label, children }) {
@@ -139,14 +160,51 @@ function Field({ label, children }) {
   );
 }
 
+function downloadBlob(blob, filename) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+}
+
+function downloadCsvTemplate() {
+  const rows = [
+    excelHeaders,
+    ["S-0001", "Nama Contoh", "1", "TRUE"],
+  ];
+
+  const csv = rows
+    .map((row) =>
+      row
+        .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+        .join(",")
+    )
+    .join("\r\n");
+
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  downloadBlob(blob, "template_data_siswa.csv");
+}
+
 export default function EducationData() {
   const [activeTab, setActiveTab] = useState("schools");
   const [schools, setSchools] = useState([]);
   const [students, setStudents] = useState([]);
   const [schoolForm, setSchoolForm] = useState(initialSchool);
   const [studentForm, setStudentForm] = useState(initialStudent);
+  const [excelFile, setExcelFile] = useState(null);
+  const [importResults, setImportResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -160,12 +218,8 @@ export default function EducationData() {
         api.get("/education/students"),
       ]);
 
-      setSchools(
-        Array.isArray(schoolResponse.data) ? schoolResponse.data : []
-      );
-      setStudents(
-        Array.isArray(studentResponse.data) ? studentResponse.data : []
-      );
+      setSchools(normalizeList(schoolResponse.data));
+      setStudents(normalizeList(studentResponse.data));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -225,7 +279,12 @@ export default function EducationData() {
       is_active: studentForm.is_active,
     };
 
-    if (!payload.student_number || !payload.full_name || !payload.school_id) {
+    if (
+      !payload.student_number ||
+      !payload.full_name ||
+      !Number.isInteger(payload.school_id) ||
+      payload.school_id <= 0
+    ) {
       setError("Nomor siswa, nama lengkap, dan sekolah wajib diisi.");
       setSaving(false);
       return;
@@ -243,12 +302,82 @@ export default function EducationData() {
     }
   }
 
+  async function handleDownloadTemplate() {
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await api.get(
+        "/education/import/students/template",
+        { responseType: "blob" }
+      );
+
+      downloadBlob(response.data, "template_data_siswa.xlsx");
+    } catch (err) {
+      setError(
+        getErrorMessage(err) +
+          " Jika endpoint template belum tersedia, gunakan template CSV sementara."
+      );
+    }
+  }
+
+  async function handleImportExcel(event) {
+    event.preventDefault();
+
+    if (!excelFile) {
+      setError("Pilih file Excel terlebih dahulu.");
+      return;
+    }
+
+    if (!excelFile.name.toLowerCase().endsWith(".xlsx")) {
+      setError("Pilih file dengan format .xlsx.");
+      return;
+    }
+
+    if (excelFile.size > 5 * 1024 * 1024) {
+      setError("Ukuran file maksimal 5 MB.");
+      return;
+    }
+
+    setImporting(true);
+    setError("");
+    setNotice("");
+    setImportResults(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", excelFile);
+
+      const response = await api.post(
+        "/education/import/students",
+        formData,
+        { timeout: 60000 }
+      );
+
+      setImportResults(response.data);
+      setNotice(
+        `Impor selesai: ${response.data.imported ?? 0} berhasil, ` +
+          `${response.data.failed ?? 0} gagal.`
+      );
+      setExcelFile(null);
+
+      const fileInput = document.getElementById("education-excel-file");
+      if (fileInput) fileInput.value = "";
+
+      await loadData();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div style={styles.page}>
       <div>
         <h2 style={{ margin: "0 0 8px" }}>Data Education</h2>
         <p style={{ margin: 0, color: "#667085", lineHeight: 1.6 }}>
-          Input sekolah dan siswa melalui API MAI Nexus AI Education.
+          Kelola data sekolah dan siswa melalui MAI Nexus AI Education.
         </p>
       </div>
 
@@ -301,6 +430,7 @@ export default function EducationData() {
             borderRadius: 8,
             background: "#fff1f0",
             color: "#a61b1b",
+            overflowWrap: "anywhere",
           }}
         >
           {error}
@@ -355,15 +485,13 @@ export default function EducationData() {
                   }
                   required
                 >
-                  <option value="PAUD">PAUD</option>
-                  <option value="TK">TK</option>
-                  <option value="SD">SD</option>
-                  <option value="SMP">SMP</option>
-                  <option value="SMA">SMA</option>
-                  <option value="SMK">SMK</option>
-                  <option value="SLB">SLB</option>
-                  <option value="MA">MA</option>
-                  <option value="Lainnya">Lainnya</option>
+                  {["PAUD", "TK", "SD", "SMP", "SMA", "SMK", "SLB", "MA", "Lainnya"].map(
+                    (level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    )
+                  )}
                 </select>
               </Field>
 
@@ -408,13 +536,7 @@ export default function EducationData() {
                 </select>
               </Field>
 
-              <div
-                style={{
-                  gridColumn: "1 / -1",
-                  display: "flex",
-                  justifyContent: "flex-end",
-                }}
-              >
+              <div style={{ gridColumn: "1 / -1", textAlign: "right" }}>
                 <button style={styles.button} disabled={saving} type="submit">
                   {saving ? "Menyimpan..." : "Simpan Sekolah"}
                 </button>
@@ -528,13 +650,7 @@ export default function EducationData() {
                   </select>
                 </Field>
 
-                <div
-                  style={{
-                    gridColumn: "1 / -1",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                  }}
-                >
+                <div style={{ gridColumn: "1 / -1", textAlign: "right" }}>
                   <button style={styles.button} disabled={saving} type="submit">
                     {saving ? "Menyimpan..." : "Simpan Siswa"}
                   </button>
@@ -544,44 +660,62 @@ export default function EducationData() {
           </section>
 
           <section style={styles.panel}>
-            <h3 style={{ marginTop: 0 }}>Daftar Siswa</h3>
+            <h3 style={{ marginTop: 0 }}>Impor Siswa dari Excel</h3>
 
-            {loading ? (
-              <p>Memuat data siswa...</p>
-            ) : students.length === 0 ? (
-              <p style={{ color: "#667085" }}>Belum ada data siswa.</p>
-            ) : (
-              <div style={styles.tableWrap}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      {["Nomor siswa", "Nama lengkap", "ID sekolah", "Status"].map(
-                        (heading) => (
-                          <th key={heading} style={styles.cell}>
-                            {heading}
-                          </th>
-                        )
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student) => (
-                      <tr key={student.id}>
-                        <td style={styles.cell}>{student.student_number}</td>
-                        <td style={styles.cell}>{student.full_name}</td>
-                        <td style={styles.cell}>{student.school_id}</td>
-                        <td style={styles.cell}>
-                          {student.is_active ? "Aktif" : "Tidak aktif"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </>
-      )}
-    </div>
-  );
-}
+            <p style={{ color: "#667085", lineHeight: 1.6 }}>
+              Unduh template Excel, isi data siswa, kemudian unggah kembali.
+              Maksimal 500 baris data dan ukuran file 5 MB.
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <button
+                type="button"
+                style={styles.secondaryButton}
+                onClick={handleDownloadTemplate}
+                disabled={importing}
+              >
+                Unduh Template Excel
+              </button>
+
+              <button
+                type="button"
+                style={styles.secondaryButton}
+                onClick={downloadCsvTemplate}
+                disabled={importing}
+              >
+                Unduh Template CSV
+              </button>
+            </div>
+
+            <form onSubmit={handleImportExcel} style={styles.form}>
+              <Field label="Pilih file Excel (.xlsx) *">
+                <input
+                  id="education-excel-file"
+                  type="file"
+                  accept=".xlsx"
+                  style={styles.input}
+                  onChange={(event) => {
+                    setExcelFile(event.target.files?.[0] || null);
+                    setImportResults(null);
+                    setError("");
+                  }}
+                  required
+                />
+              </Field>
+
+              <div style={{ display: "flex", alignItems: "flex-end" }}>
+                <button
+                  type="submit"
+                  style={styles.button}
+                  disabled={importing || !excelFile}
+                >
+                  {importing ? "Mengimpor..." : "Unggah dan Impor"}
+                </button>
+   
