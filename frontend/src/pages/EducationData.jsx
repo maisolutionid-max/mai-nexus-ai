@@ -666,51 +666,6 @@ export default function EducationData() {
               Unduh template Excel, isi data siswa, kemudian unggah kembali.
               Maksimal 500 baris data dan ukuran file 5 MB.
             </p>
-
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 10,
-                marginBottom: 16,
-              }}
-            >
-              <button
-                type="button"
-                style={styles.secondaryButton}
-                onClick={handleDownloadTemplate}
-                disabled={importing}
-              >
-                Unduh Template Excel
-              </button>
-
-              <button
-                type="button"
-                style={styles.secondaryButton}
-                onClick={downloadCsvTemplate}
-                disabled={importing}
-              >
-                Unduh Template CSV
-              </button>
-            </div>
-
-            <form onSubmit={handleImportExcel} style={styles.form}>
-              <Field label="Pilih file Excel (.xlsx) *">
-                <input
-                  id="education-excel-file"
-                  type="file"
-                  accept=".xlsx"
-                  style={styles.input}
-                  onChange={(event) => {
-                    setExcelFile(event.target.files?.[0] || null);
-                    setImportResults(null);
-                    setError("");
-                  }}
-                  required
-                />
-              </Field>
-
-              <div style={{ display: "flex", alignItems: "flex-end" }}>
                 <button
                   type="submit"
                   style={styles.button}
@@ -718,4 +673,101 @@ export default function EducationData() {
                 >
                   {importing ? "Mengimpor..." : "Unggah dan Impor"}
                 </button>
-   
+              </div>
+            </form>
+
+            <p style={{ fontSize: 13, color: "#667085", lineHeight: 1.6 }}>
+              Kolom: student_number, full_name, school_id, is_active.
+              Gunakan ID sekolah yang terdaftar pada akun/tenant terkait.
+            </p>
+
+            {importResults && (
+              <div style={{ marginTop: 20 }}>
+                <h4>Hasil Impor</h4>
+                <p>
+                  Total diproses: {importResults.total_processed ?? 0} |
+                  Berhasil: {importResults.imported ?? 0} |
+                  Gagal: {importResults.failed ?? 0}
+                </p>
+
+                <div style={styles.tableWrap}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        {[
+                          "Baris Excel",
+                          "Nomor siswa",
+                          "Status",
+                          "Keterangan",
+                        ].map((heading) => (
+                          <th key={heading} style={styles.cell}>
+                            {heading}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(importResults.results || []).map((item, index) => (
+                        <tr key={`${item.row}-${index}`}>
+                          <td style={styles.cell}>{item.row}</td>
+                          <td style={styles.cell}>
+                            {item.student_number || "—"}
+                          </td>
+                          <td style={styles.cell}>
+                            {item.status === "imported" ? "Berhasil" : "Gagal"}
+                          </td>
+                          <td style={styles.cell}>{item.message}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section style={styles.panel}>
+            <h3 style={{ marginTop: 0 }}>Daftar Siswa</h3>
+
+            {loading ? (
+              <p>Memuat data siswa...</p>
+            ) : students.length === 0 ? (
+              <p style={{ color: "#667085" }}>Belum ada data siswa.</p>
+            ) : (
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      {[
+                        "Nomor siswa",
+                        "Nama lengkap",
+                        "ID sekolah",
+                        "Status",
+                      ].map((heading) => (
+                        <th key={heading} style={styles.cell}>
+                          {heading}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => (
+                      <tr key={student.id}>
+                        <td style={styles.cell}>{student.student_number}</td>
+                        <td style={styles.cell}>{student.full_name}</td>
+                        <td style={styles.cell}>{student.school_id}</td>
+                        <td style={styles.cell}>
+                          {student.is_active ? "Aktif" : "Tidak aktif"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
