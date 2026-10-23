@@ -1,6 +1,24 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
+import React from 'react';
+import DataManager from '../components/DataManager';
+
+// Konfigurasi kolom untuk halaman Data Sekolah atau Edukasi umum
+const schoolFields = [
+  { key: 'npsn', label: 'NPSN' },
+  { key: 'nama_sekolah', label: 'Nama Sekolah' },
+  { key: 'alamat', label: 'Alamat' }
+];
+
+export default function EducationData() {
+  return (
+    <DataManager 
+      title="Sekolah" 
+      fields={schoolFields} 
+    />
+  );
+}
 
 const initialSchool = {
   name: "",
