@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import "./styles/global.css";
+import EducationData from "./pages/EducationData";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "⌂" },
@@ -26,6 +27,9 @@ export default function App() {
 
   const activeLabel =
     menuItems.find((item) => item.id === activePage)?.label || "Dashboard";
+
+  const showEducationData =
+    activePage === "schools" || activePage === "students";
 
   return (
     <div className="app-shell">
@@ -222,13 +226,15 @@ export default function App() {
                   <div className="activity-copy">
                     <strong>Integrasi API</strong>
                     <span>
-                      Belum diverifikasi. Perlu pengujian koneksi backend.
+                      Status koneksi akan diketahui ketika halaman data dibuka.
                     </span>
                   </div>
-                  <span className="activity-time">Berikutnya</span>
+                  <span className="activity-time">API</span>
                 </div>
               </section>
             </>
+          ) : showEducationData ? (
+            <EducationData key={activePage} />
           ) : (
             <section className="panel module-placeholder">
               <div className="module-placeholder-icon">
