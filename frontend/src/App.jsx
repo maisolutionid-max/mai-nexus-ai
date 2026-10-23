@@ -4,19 +4,22 @@ import DataManager from "./components/DataManager";
 import SettingsPage from "./components/SettingsPage";
 import AiCopilot from "./components/AiCopilot";
 import FinancialManager from "./components/FinancialManager";
+import StudentProgress from "./components/StudentProgress";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "⌂" },
   { id: "ai-copilot", label: "AI Copilot", icon: "🤖" },
   { id: "schools", label: "Data Sekolah", icon: "▤" },
   { id: "students", label: "Data Siswa", icon: "♙" },
+  { id: "progress", label: "Progres Siswa", icon: "📈" }, // <-- Ditambahkan di sini
   { id: "academic-years", label: "Tahun Ajaran", icon: "▦" },
   { id: "classes", label: "Manajemen Kelas", icon: "▧" },
   { id: "teachers", label: "Data Guru", icon: "♧" },
   { id: "attendance", label: "Kehadiran", icon: "✓" },
-  { id: "finance", label: "Laporan Keuangan", icon: "💰" }, // <-- Ditambahkan di sini
+  { id: "finance", label: "Laporan Keuangan", icon: "💰" },
   { id: "settings", label: "Pengaturan", icon: "⚙" },
 ];
+
 
 const moduleConfigs = {
   schools: {
@@ -275,7 +278,9 @@ export default function App() {
                 </article>
               </section>
             </>
-             ) : activePage === "finance" ? (
+             ) : activePage === "progress" ? (
+         <StudentProgress />
+       ) : activePage === "finance" ? (
          <FinancialManager />
        ) : activePage === "ai-copilot" ? (
             <AiCopilot />
