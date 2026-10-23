@@ -1,7 +1,7 @@
-
 import React, { useState } from "react";
 import "./styles/global.css";
 import EducationData from "./pages/EducationData";
+import DataSiswa from "./components/DataSiswa"; // <-- Tambahkan Impor Komponen DataSiswa
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "⌂" },
@@ -233,9 +233,12 @@ export default function App() {
                 </div>
               </section>
             </>
-          ) : showEducationData ? (
-            <EducationData key={activePage} />
-          ) : (
+          ) : activePage === "students" ? (
+           <DataSiswa />
+            ) : activePage === "schools" ? (
+               <EducationData key={activePage} />
+              ) : (
+
             <section className="panel module-placeholder">
               <div className="module-placeholder-icon">
                 {menuItems.find((item) => item.id === activePage)?.icon}
