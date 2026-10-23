@@ -249,7 +249,7 @@ export default function DataManager({ title, fields }) {
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
             <thead>
               <tr style={{ backgroundColor: "#f1f5f9", borderBottom: "2px solid #cbd5e1" }}>
-                <th style={{ padding: "10px", width: "40px", textCenter: "center" }}>No</th>
+                <th style={{ padding: "10px", width: "40px", textAlign: "center" }}>No</th>
                 {fields.map((f) => (
                   <th key={f.key} style={{ padding: "10px", color: "#334155" }}>
                     {f.label}
@@ -292,5 +292,19 @@ export default function DataManager({ title, fields }) {
 
         {/* TANDA TANGAN KEPALA SEKOLAH (PADA HASIL PRINT) */}
         <div className="print-footer">
-          <div style={{
-          
+          <div style={{ textAlign: "center", width: "220px", fontSize: "12px" }}>
+            <p style={{ margin: "0 0 60px 0" }}>
+              Bandung Barat, {currentDateStr}<br />
+              Kepala Sekolah,
+            </p>
+            <p style={{ margin: 0, fontWeight: "bold", textDecoration: "underline" }}>
+              {schoolProfile.kepalaSekolah}
+            </p>
+            <p style={{ margin: 0 }}>NIP. ....................................</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
