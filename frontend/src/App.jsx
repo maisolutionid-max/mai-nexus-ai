@@ -3,6 +3,7 @@ import "./styles/global.css";
 import DataManager from "./components/DataManager";
 import SettingsPage from "./components/SettingsPage";
 import AiCopilot from "./components/AiCopilot";
+import FinancialManager from "./components/FinancialManager";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "⌂" },
@@ -13,6 +14,7 @@ const menuItems = [
   { id: "classes", label: "Manajemen Kelas", icon: "▧" },
   { id: "teachers", label: "Data Guru", icon: "♧" },
   { id: "attendance", label: "Kehadiran", icon: "✓" },
+  { id: "finance", label: "Laporan Keuangan", icon: "💰" }, // <-- Ditambahkan di sini
   { id: "settings", label: "Pengaturan", icon: "⚙" },
 ];
 
@@ -273,7 +275,9 @@ export default function App() {
                 </article>
               </section>
             </>
-          ) : activePage === "ai-copilot" ? (
+             ) : activePage === "finance" ? (
+         <FinancialManager />
+       ) : activePage === "ai-copilot" ? (
             <AiCopilot />
           ) : activePage === "settings" ? (
             <SettingsPage />
