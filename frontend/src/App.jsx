@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "./styles/global.css";
-import EducationData from "./pages/EducationData";
-import DataSiswa from "./components/DataSiswa"; // <-- Tambahkan Impor Komponen DataSiswa
+import DataManager from "./components/DataManager";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "⌂" },
@@ -13,6 +12,58 @@ const menuItems = [
   { id: "attendance", label: "Kehadiran", icon: "✓" },
   { id: "settings", label: "Pengaturan", icon: "⚙" },
 ];
+
+// Konfigurasi Kolom Form & Tabel Dinamis untuk Setiap Modul
+const moduleConfigs = {
+  schools: {
+    title: "Sekolah",
+    fields: [
+      { key: "npsn", label: "NPSN" },
+      { key: "nama_sekolah", label: "Nama Sekolah" },
+      { key: "alamat", label: "Alamat" },
+    ],
+  },
+  students: {
+    title: "Siswa",
+    fields: [
+      { key: "nisn", label: "NISN" },
+      { key: "nama", label: "Nama Lengkap" },
+      { key: "kelas", label: "Kelas" },
+    ],
+  },
+  "academic-years": {
+    title: "Tahun Ajaran",
+    fields: [
+      { key: "kode", label: "Kode" },
+      { key: "tahun", label: "Tahun Ajaran" },
+      { key: "status", label: "Status" },
+    ],
+  },
+  classes: {
+    title: "Kelas",
+    fields: [
+      { key: "kode_kelas", label: "Kode Kelas" },
+      { key: "nama_kelas", label: "Nama Kelas" },
+      { key: "wali_kelas", label: "Wali Kelas" },
+    ],
+  },
+  teachers: {
+    title: "Guru",
+    fields: [
+      { key: "nip", label: "NIP/NIK" },
+      { key: "nama", label: "Nama Guru" },
+      { key: "mapel", label: "Mata Pelajaran" },
+    ],
+  },
+  attendance: {
+    title: "Kehadiran",
+    fields: [
+      { key: "tanggal", label: "Tanggal" },
+      { key: "nama_siswa", label: "Nama Siswa" },
+      { key: "status", label: "Status (Hadir/Izin/Sakit)" },
+    ],
+  },
+};
 
 const stats = [
   { label: "Total Siswa", value: "—", note: "Data dari API", icon: "♙" },
@@ -27,9 +78,6 @@ export default function App() {
 
   const activeLabel =
     menuItems.find((item) => item.id === activePage)?.label || "Dashboard";
-
-  const showEducationData =
-    activePage === "schools" || activePage === "students";
 
   return (
     <div className="app-shell">
@@ -134,13 +182,6 @@ export default function App() {
                 platform terintegrasi.
               </p>
             </div>
-            <div className="welcome-badge">
-              <span className="welcome-badge-icon">✦</span>
-              <div>
-                <strong>AI-Powered Education</strong>
-                <span>Human-in-the-Loop</span>
-              </div>
-            </div>
           </section>
 
           {activePage === "dashboard" ? (
@@ -204,50 +245,18 @@ export default function App() {
                   </div>
                 </article>
               </section>
-
-              <section className="panel activity-panel">
-                <div className="panel-heading">
-                  <div>
-                    <h2>Aktivitas Sistem</h2>
-                    <p>Status awal antarmuka</p>
-                  </div>
-                  <span className="status-pill">UI Preview</span>
-                </div>
-                <div className="activity-row">
-                  <div className="activity-icon">✓</div>
-                  <div className="activity-copy">
-                    <strong>Antarmuka dashboard</strong>
-                    <span>Komponen navigasi dan tata letak tersedia.</span>
-                  </div>
-                  <span className="activity-time">UI</span>
-                </div>
-                <div className="activity-row">
-                  <div className="activity-icon">↔</div>
-                  <div className="activity-copy">
-                    <strong>Integrasi API</strong>
-                    <span>
-                      Status koneksi akan diketahui ketika halaman data dibuka.
-                    </span>
-                  </div>
-                  <span className="activity-time">API</span>
-                </div>
-              </section>
             </>
-          ) : activePage === "students" ? (
-           <DataSiswa />
-            ) : activePage === "schools" ? (
-               <EducationData key={activePage} />
-              ) : (
-
+          ) : moduleConfigs[activePage] ? (
+            /* Komponen Dinamis untuk Semua Menu Data */
+            <DataManager
+              key={activePage}
+              title={moduleConfigs[activePage].title}
+              fields={moduleConfigs[activePage].fields}
+            />
+          ) : (
             <section className="panel module-placeholder">
-              <div className="module-placeholder-icon">
-                {menuItems.find((item) => item.id === activePage)?.icon}
-              </div>
               <h2>{activeLabel}</h2>
-              <p>
-                Area modul {activeLabel.toLowerCase()} telah disiapkan pada
-                navigasi. Halaman ini belum terhubung dengan data backend.
-              </p>
+              <p>Modul {activeLabel} sedang disiapkan.</p>
               <button
                 className="primary-button"
                 onClick={() => setActivePage("dashboard")}
