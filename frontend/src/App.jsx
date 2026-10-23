@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import "./styles/global.css";
 import DataManager from "./components/DataManager";
 import SettingsPage from "./components/SettingsPage";
+import AiCopilot from "./components/AiCopilot";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "⌂" },
+  { id: "ai-copilot", label: "AI Copilot", icon: "🤖" }, // <-- Ditambahkan di sini
   { id: "schools", label: "Data Sekolah", icon: "▤" },
   { id: "students", label: "Data Siswa", icon: "♙" },
   { id: "academic-years", label: "Tahun Ajaran", icon: "▦" },
@@ -194,7 +196,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="page-content">
+                <div className="page-content">
           <section className="welcome-row">
             <div>
               <div className="eyebrow">MAI NEXUS AI EDUCATION</div>
@@ -209,6 +211,29 @@ export default function App() {
               </p>
             </div>
           </section>
+
+          {activePage === "dashboard" ? (
+            // ... (bagian kode untuk Tampilan Dashboard) ...
+          ) : activePage === "ai-copilot" ? (
+            <AiCopilot />
+          ) : activePage === "settings" ? (
+            <SettingsPage />
+          ) : moduleConfigs[activePage] ? (
+            <DataManager
+              key={activePage}
+              title={moduleConfigs[activePage].title}
+              fields={moduleConfigs[activePage].fields}
+            />
+          ) : (
+            // ... (bagian untuk placeholder modul lain) ...
+          )}
+
+          <footer className="page-footer">
+            <span>© MAI Solution Hub</span>
+            <span>MAI Nexus AI Education</span>
+          </footer>
+        </div>
+
 
           {activePage === "dashboard" ? (
             <>
