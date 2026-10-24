@@ -1,13 +1,9 @@
-
 name: Deploy MAI Nexus AI Education Frontend
 
 on:
   push:
     branches:
       - main
-    paths:
-      - "frontend/**"
-      - ".github/workflows/deploy-frontend.yml"
   workflow_dispatch:
 
 permissions:
