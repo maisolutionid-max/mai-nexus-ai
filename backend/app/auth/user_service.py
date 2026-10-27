@@ -5,9 +5,6 @@ from app.models.user import User as UserModel
 from .Password import hash_password
 
 
-ALLOWED_PUBLIC_ROLES = {"customer", "parent", "student"}
-
-
 def create_user(user, db: Session):
     email = user.email.strip().lower()
 
@@ -20,27 +17,26 @@ def create_user(user, db: Session):
     if existing_user:
         return {"detail": "Email sudah terdaftar"}
 
-    requested_role = getattr(user, "role", "customer")
-    role = (
-        requested_role
-        if requested_role in ALLOWED_PUBLIC_ROLES
-        else "customer"
-    )
-
+    # Registrasi publik tidak boleh menentukan role istimewa.
     new_user = UserModel(
         full_name=user.full_name,
         email=email,
         password=hash_password(user.password),
-        role=role,
+        role="customer",
         is_active=True,
     )
 
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+
+    try:
+        db.commit()
+        db.refresh(new_user)
+    except Exception:
+        db.rollback()
+        raise
 
     return {
-        "message": "User berhasil disimpan",
+        "message": "Registrasi berhasil",
         "user": {
             "id": new_user.id,
             "full_name": new_user.full_name,
