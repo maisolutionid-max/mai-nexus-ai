@@ -2,15 +2,16 @@
 """Add role to education tenant users.
 
 Revision ID: add_edu_tenant_role
-Revises: REPLACE_WITH_CURRENT_REVISION
 """
 
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "add_edu_tenant_role"
-down_revision = "REPLACE_WITH_CURRENT_REVISION"
+
+# Ganti dengan revision ID migrasi sebelumnya yang benar.
+down_revision = "GANTI_DENGAN_REVISION_SEBELUMNYA"
+
 branch_labels = None
 depends_on = None
 
