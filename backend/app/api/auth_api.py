@@ -1,45 +1,54 @@
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from database import get_db
-from schemas.auth import UserLogin, UserRegister, UserResponse, Token
-from services.auth_service import register_user, login_user
+from app.database import get_db
+from app.auth.user_service import create_user
+from app.auth.auth_service import login
+from app.auth.user import User as UserCreate
+from app.auth.jwt_handler import create_access_token
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Authentication"]
-)
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post(
-    "/register",
-    response_model=UserResponse
-)
-def register(
-    user: UserRegister,
-    db: Session = Depends(get_db)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+def register_api(
+    user: UserCreate,
+    db: Session = Depends(get_db),
 ):
     try:
-        return register_user(db, user)
-    except ValueError as e:
+        result = create_user(user, db)
+    except Exception:
+        db.rollback()
         raise HTTPException(
-            status_code=400,
-            detail=str(e)
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registrasi gagal diproses.",
         )
 
+    if isinstance(result, dict) and "detail" in result:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=result["detail"],
+        )
 
-@router.post(
-    "/login",
-    response_model=Token
-)
-def login(
-    user: UserLogin,
-    db: Session = Depends(get_db)
+    return result
+
+
+@router.post("/login")
+def login_api(
+    username: str,
+    password: str,
+    db: Session = Depends(get_db),
 ):
-    try:
-        return login_user(db, user)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=401,
-            detail=str(e)
+    result = login(username, password, db)
+
+    if isinstance(result, dict) and "detail" in result:
+        message = result["detail"]
+        code = (
+            status.HTTP_403_FORBIDDEN
+            if message == "Akun tidak aktif"
+            else status.HTTP_401_UNAUTHORIZED
         )
+        raise HTTPException(status_code=code, detail=message)
+
+    return result
