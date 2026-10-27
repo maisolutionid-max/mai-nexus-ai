@@ -1,24 +1,47 @@
+
+from sqlalchemy.orm import Session
+
+from app.models.user import User
+from app.database import SessionLocal
 from .Password import verify_password
 from .jwt_handler import create_access_token
-from .user_service import create_user
+
 
 def login(username: str, password: str):
+    db: Session = SessionLocal()
 
-    # Dummy user sementara
-    user = {
-        "username": "admin",
-        "password": "$2b$12$dummyhash"
-    }
+    try:
+        user = (
+            db.query(User)
+            .filter(User.email == username)
+            .first()
+        )
 
-    token = create_access_token(
-        {"sub": username}
-    )
+        if user is None:
+            return {"detail": "Email atau password salah"}
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+        if not user.is_active:
+            return {"detail": "Akun tidak aktif"}
 
+        if not verify_password(password, user.password):
+            return {"detail": "Email atau password salah"}
 
-def register(user):
-    return create_user(user)
+        token = create_access_token(
+            {
+                "sub": str(user.id),
+                "role": user.role,
+            }
+        )
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "full_name": user.full_name,
+                "email": user.email,
+                "role": user.role,
+            },
+        }
+    finally:
+        db.close()
