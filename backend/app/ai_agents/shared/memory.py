@@ -1,5 +1,5 @@
-class AgentMemory:
 
+class Memory:
     def __init__(self):
         self.memory = []
 
@@ -11,3 +11,7 @@ class AgentMemory:
 
     def clear(self):
         self.memory.clear()
+
+
+# Backward compatibility with existing agents
+AgentMemory = Memory
