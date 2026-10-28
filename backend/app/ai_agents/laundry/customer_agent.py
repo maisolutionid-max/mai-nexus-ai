@@ -1,6 +1,9 @@
 from app.ai_agents.shared.base_agent import BaseAgent
 from app.ai_agents.shared.memory import Memory
-from app.ai_agents.shared.llm_client import LLMClient
+from app.ai_agents.shared.llm_client import (
+    BaseLLMClient,
+    LLMClientFactory,
+)
 from app.ai_agents.shared.knowledge_base import KnowledgeBase
 
 
