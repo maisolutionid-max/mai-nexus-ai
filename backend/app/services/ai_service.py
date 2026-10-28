@@ -1,5 +1,4 @@
-try:
-    from app.ai_agents.shared.orchestrator import AgentOrchestrator
+from app.ai_agents.shared.orchestrator import AgentOrchestrator
     _orchestrator_available = True
 except ImportError:
     _orchestrator_available = False
