@@ -1,50 +1,61 @@
+
 from app.ai_agents.shared.base_agent import BaseAgent
 from app.ai_agents.shared.memory import Memory
-from app.ai_agents.shared.llm_client import (
-    BaseLLMClient,
-    LLMClientFactory,
-)
+from app.ai_agents.shared.llm_client import LLMClientFactory
 from app.ai_agents.shared.knowledge_base import KnowledgeBase
 
 
 class CustomerAgent(BaseAgent):
-    """
-    AI Agent untuk mengelola hubungan pelanggan.
-    """
+    """AI Agent untuk menangani pertanyaan dan kebutuhan pelanggan laundry."""
 
     def __init__(self):
         super().__init__(name="CustomerAgent")
         self.memory = Memory()
-        self.llm = LLMClient()
+        self.llm = LLMClientFactory.create(provider="mock")
         self.kb = KnowledgeBase()
 
-    async def process(self, customer_data: dict):
-        """
-        Analisis data pelanggan.
-        """
+    async def response(self, prompt: str) -> str:
+        """Menghasilkan respons melalui LLM client."""
+        return await self.llm.generate(prompt)
 
-        name = customer_data.get("name")
-        total_orders = customer_data.get("total_orders", 0)
-        last_visit = customer_data.get("last_visit")
+    async def process(self, customer_data: dict) -> dict:
+        """Memproses permintaan pelanggan."""
+
+        customer_name = customer_data.get("name", "Pelanggan")
+        question = customer_data.get(
+            "question",
+            customer_data.get("message", "")
+        )
+
+        if not question:
+            return {
+                "status": "error",
+                "agent": self.name,
+                "message": "Pertanyaan atau pesan pelanggan wajib diisi."
+            }
 
         prompt = f"""
-        Analisis pelanggan laundry berikut.
+Kamu adalah asisten layanan pelanggan laundry.
 
-        Nama : {name}
-        Total Order : {total_orders}
-        Kunjungan Terakhir : {last_visit}
+Nama pelanggan: {customer_name}
+Pertanyaan pelanggan: {question}
 
-        Berikan:
-        - Tingkat loyalitas pelanggan
-        - Risiko pelanggan tidak kembali
-        - Rekomendasi promosi
-        - Rekomendasi layanan berikutnya
-        """
+Jawab dengan sopan, jelas, singkat, dan membantu.
+Jangan mengarang harga, status pesanan, atau waktu selesai
+jika informasi tersebut tidak tersedia.
+"""
 
-        response = await self.llm.generate(prompt)
+        answer = await self.response(prompt)
+
+        self.memory.add({
+            "customer_name": customer_name,
+            "question": question,
+            "answer": answer,
+        })
 
         return {
             "status": "success",
             "agent": self.name,
-            "analysis": response
+            "customer_name": customer_name,
+            "answer": answer,
         }
