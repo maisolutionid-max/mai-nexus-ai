@@ -1,67 +1,78 @@
-from fastapi import APIRouter
-from app.models.order import Order
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse
+from app.services import order_service
 from app.services.pricing import calculate_price
-from app.database.database import get_connection
+
 router = APIRouter()
 
-orders = []
-@router.get("/orders")
-def get_orders():
 
-    conn = get_connection()
-    cursor = conn.cursor()
+@router.get("/orders", response_model=list[OrderResponse])
+def get_orders(db: Session = Depends(get_db)):
+    return order_service.get_orders(db)
 
-    cursor.execute("SELECT * FROM orders")
 
-    orders = cursor.fetchall()
+@router.get("/orders/{order_id}", response_model=OrderResponse)
+def get_order(order_id: int, db: Session = Depends(get_db)):
+    order = order_service.get_order(db, order_id)
 
-    conn.close()
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order tidak ditemukan",
+        )
 
-    return [dict(row) for row in orders]
+    return order
 
-@router.post("/orders")
-def create_order(order: Order):
 
-    order.total = calculate_price(
-        order.service,
-        order.weight
+@router.post(
+    "/orders",
+    response_model=OrderResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+    order_data = order.model_dump()
+
+    # Harga dihitung dari jenis layanan dan berat.
+    order_data["total_price"] = calculate_price(
+        order_data["service_type"],
+        order_data["weight"],
     )
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    order_to_create = OrderCreate(**order_data)
+    return order_service.create_order(db, order_to_create)
 
-    cursor.execute(
-        """
-        INSERT INTO orders(
-            customer_id,
-            service,
-            weight,
-            total,
-            status
+
+@router.put("/orders/{order_id}", response_model=OrderResponse)
+def update_order(
+    order_id: int,
+    order: OrderUpdate,
+    db: Session = Depends(get_db),
+):
+    updated = order_service.update_order(db, order_id, order)
+
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order tidak ditemukan",
         )
-        VALUES(?,?,?,?,?)
-        """,
-        (
-            order.customer_id,
-            order.service,
-            order.weight,
-            order.total,
-            order.status
+
+    return updated
+
+
+@router.delete("/orders/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_order(order_id: int, db: Session = Depends(get_db)):
+    deleted = order_service.delete_order(db, order_id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order tidak ditemukan",
         )
-    )
 
-    conn.commit()
+    return None
 
-    conn.close()
-
-    return {
-        "message": "Order berhasil ditambahkan",
-        "total": order.total
-    }
-
-    orders.append(order)
-
-    return {
-        "message": "Order berhasil ditambahkan",
-        "data": order
-    }
+   
