@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.user import User as UserModel
-from .Password import verify_password
+from .password import verify_password
 from .jwt_handler import create_access_token
 
 
